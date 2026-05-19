@@ -1,0 +1,218 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - Sistema de Inventario</title>
+    <link rel="stylesheet" href="css/estilos.css">
+    <style>
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0072b2 0%, #56b4e9 100%);
+            position: relative;
+        }
+        [data-theme="dark"] .login-container {
+            background: linear-gradient(135deg, #0f172a 0%, #312e81 100%);
+        }
+        .login-box {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+            color: var(--text);
+        }
+        .login-theme-switch {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        .login-logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .login-logo h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .login-logo p {
+            color: var(--text-light);
+        }
+        .login-form .form-group {
+            margin-bottom: 20px;
+        }
+        .login-form input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            background: var(--card-bg);
+            color: var(--text);
+        }
+        .login-form input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 114, 178, 0.3);
+        }
+        .login-error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            text-align: center;
+        }
+        .login-info {
+            text-align: center;
+            margin-top: 20px;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            background: var(--bg);
+            padding: 16px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-theme-switch">
+            <label class="theme-switch" title="Modo daltónico / oscuro">
+                <span class="theme-switch-icon" aria-hidden="true">☀️</span>
+                <input class="theme-switch-input" type="checkbox" onchange="alternarTema()" aria-label="Cambiar a modo oscuro">
+                <span class="theme-switch-slider" aria-hidden="true"></span>
+                <span class="theme-switch-icon" aria-hidden="true">🌙</span>
+                <span class="theme-switch-text">Daltónico</span>
+            </label>
+        </div>
+        <div class="login-box">
+            <div class="login-logo">
+                <h1>🍞</h1>
+                <h2>Sistema de Inventario</h2>
+                <p>Inicie sesión para continuar</p>
+            </div>
+            
+            <div id="login-error" class="login-error">
+                ❌ Código o contraseña incorrectos
+            </div>
+            
+            <form class="login-form" onsubmit="iniciarSesion(event)" autocomplete="off">
+                <div class="form-group">
+                    <input type="text" id="login-codigo" name="codigo-usuario-xyz" placeholder="Código de cajero" 
+                           required autofocus autocomplete="off" readonly onfocus="this.removeAttribute('readonly')">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="login-password" name="password-usuario-xyz" placeholder="Contraseña" 
+                           required autocomplete="off" readonly onfocus="this.removeAttribute('readonly')">
+                </div>
+                <button type="submit" class="login-btn">🔐 Iniciar Sesión</button>
+            </form>
+            
+            <div class="login-info">
+                <p>Sistema de gestión de inventario local</p>
+                <p style="margin-top: 8px; font-size: 0.8rem; color: #94a3b8;">
+                    v1.0 • Datos almacenados localmente
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/core/config.js"></script>
+    <script src="js/core/utils.js"></script>
+    <script src="js/core/storage.js"></script>
+    <script src="js/core/init.js"></script>
+    <script src="js/features/categories.js"></script>
+    <script src="js/core/session-navigation.js"></script>
+    <script src="js/features/inventory-items.js"></script>
+    <script src="js/features/auditoria.js"></script>
+    <script src="js/features/cajeros.js"></script>
+    <script src="js/features/reports-export.js"></script>
+    <script src="js/core/ui.js"></script>
+    <script src="js/features/conteos-tabs.js"></script>
+    <script src="js/features/backup.js"></script>
+    <script src="js/features/exhibicion.js"></script>
+    <script src="js/features/neveras.js"></script>
+    <script>
+        // Inicialización mínima: solo crea admin si no existe ningún usuario
+        document.addEventListener('DOMContentLoaded', () => {
+            const cajeros = localStorage.getItem('inventario_cajeros');
+            
+            if (!cajeros) {
+                // Primera vez: crear SOLO el admin (sin datos de ejemplo)
+                const adminSolo = [
+                    { 
+                        id: 'admin-1', 
+                        nombre: 'Administrador', 
+                        rut: '0.000.000-0', 
+                        turno: 'ADMIN', 
+                        codigo: 'ADMIN', 
+                        password: '63717',
+                        cargo: 'Corporativo',
+                        activo: true 
+                    }
+                ];
+                localStorage.setItem('inventario_cajeros', JSON.stringify(adminSolo));
+                console.log('Sistema inicializado. Admin creado.');
+            }
+
+            asegurarPasswordAdminActualizado();
+            actualizarEstadoSwitchTema();
+            
+            // Limpiar campos por seguridad
+            const codigoInput = document.getElementById('login-codigo');
+            const passwordInput = document.getElementById('login-password');
+            
+            if (codigoInput) codigoInput.value = '';
+            if (passwordInput) passwordInput.value = '';
+            
+            // Si hay sesión activa válida, redirigir
+            const sesion = localStorage.getItem('inventario_sesion');
+            if (sesion) {
+                try {
+                    const datos = JSON.parse(sesion);
+                    const ahora = new Date().getTime();
+                    const expiracion = 8 * 60 * 60 * 1000;
+                    
+                    if (ahora - datos.inicio < expiracion) {
+                        window.location.href = 'index.html';
+                    } else {
+                        localStorage.removeItem('inventario_sesion');
+                    }
+                } catch(e) {
+                    localStorage.removeItem('inventario_sesion');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+
+

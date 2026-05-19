@@ -1,0 +1,1287 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hist. Cigarrillos</title>
+    <link rel="stylesheet" href="css/estilos.css">
+    <style>
+        .historial-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .conteo-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary);
+            position: relative;
+            color: var(--text);
+        }
+
+        .conteo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .conteo-fecha {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .conteo-cajero {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .conteo-resumen {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .resumen-item {
+            text-align: center;
+        }
+
+        .resumen-num {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .resumen-label {
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+
+        .conteo-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn-delete-conteo {
+            background: var(--danger-soft);
+            color: var(--danger-text);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-delete-conteo:hover {
+            background: var(--danger);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .modal-detalle {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.62);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content-detalle {
+            background: var(--card-bg);
+            margin: 2% auto;
+            padding: 30px;
+            border-radius: 16px;
+            width: 95%;
+            max-width: 1200px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        #capture-area {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            background: var(--card-bg);
+            color: var(--text);
+            padding: 40px;
+            min-width: 900px;
+            max-width: 1200px;
+            margin: 0 auto;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .detalle-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 1rem !important;
+            margin-top: 20px;
+        }
+
+        .detalle-table th {
+            background: var(--bg) !important;
+            padding: 16px 12px !important;
+            text-align: center;
+            font-weight: 700 !important;
+            color: var(--text-light) !important;
+            text-transform: uppercase;
+            font-size: 0.85rem !important;
+            letter-spacing: 0.5px;
+            border-bottom: 3px solid var(--border) !important;
+        }
+
+        .detalle-table td {
+            padding: 14px 12px !important;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .detalle-table td:first-child {
+            text-align: left;
+        }
+
+        .detalle-table code {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace !important;
+            font-size: 0.9rem !important;
+            padding: 6px 10px !important;
+            background: var(--bg) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 6px !important;
+            font-weight: 600 !important;
+        }
+
+        .col-bodega { 
+            color: #7c3aed !important; 
+            font-weight: 700 !important;
+            font-size: 1.05rem !important;
+        }
+
+        .col-exhibicion { 
+            color: #0891b2 !important; 
+            font-weight: 700 !important;
+            font-size: 1.05rem !important;
+        }
+
+        .col-total { 
+            color: #2563eb !important; 
+            font-weight: 800 !important;
+            font-size: 1.1rem !important;
+        }
+
+        .capture-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .capture-header h2 {
+            font-size: 2rem !important;
+            font-weight: 800 !important;
+            color: var(--text) !important;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+
+        .capture-info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+            padding: 24px !important;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem !important;
+        }
+
+        .capture-info-item {
+            text-align: center;
+        }
+
+        .capture-info-label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .capture-info-value {
+            font-weight: 700 !important;
+            font-size: 1.2rem !important;
+            color: var(--text);
+            margin-top: 4px;
+        }
+
+        .historial-tipo-badge {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .historial-tipo-cigarrillos {
+            background: var(--success-soft);
+            color: var(--success-text);
+        }
+
+        .historial-tipo-categoria {
+            background: var(--primary-soft);
+            color: var(--primary);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .capture-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .capture-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .capture-btn:active {
+            transform: translateY(0);
+        }
+
+        .capture-btn.capturing {
+            background: #10b981;
+            pointer-events: none;
+        }
+
+        .capture-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            animation: slideInRight 0.3s ease;
+        }
+
+        .capture-notification.show {
+            display: flex;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .conteo-resumen {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .conteo-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .conteo-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+
+            .modal-content-detalle {
+                margin: 0;
+                width: 100%;
+                height: 100%;
+                max-height: 100vh;
+                border-radius: 0;
+                padding: 20px;
+            }
+
+            #capture-area {
+                min-width: auto;
+                padding: 20px;
+            }
+
+            .detalle-table {
+                font-size: 0.8rem !important;
+            }
+
+            .detalle-table th,
+            .detalle-table td {
+                padding: 8px 4px !important;
+            }
+
+            .modal-actions {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .capture-btn {
+                width: 100%;
+                justify-content: center;
+                margin-left: 0;
+            }
+
+            .capture-info {
+                grid-template-columns: 1fr;
+                padding: 16px !important;
+            }
+
+            .capture-header h2 {
+                font-size: 1.5rem !important;
+            }
+        }
+        .force-save-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+}
+
+.force-save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 12px rgba(16, 185, 129, 0.4);
+}
+
+.force-save-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.force-save-btn.saving {
+    animation: pulse 1.5s infinite;
+}
+
+.save-status {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    display: none;
+}
+
+.save-status.show {
+    display: block;
+}
+
+.save-status.success {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #10b981;
+}
+
+.save-status.error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #ef4444;
+}
+
+.historial-capture-sheet {
+    position: fixed;
+    left: -99999px;
+    top: 0;
+    width: 1450px;
+    background: #ffffff;
+    color: #111827;
+    padding: 36px;
+    font-family: Arial, Helvetica, sans-serif;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.historial-capture-sheet h1 {
+    margin: 0 0 6px;
+    color: #111827;
+    font-size: 28px;
+}
+
+.historial-capture-sheet .capture-subtitle {
+    color: #374151;
+    font-size: 16px;
+    margin-bottom: 18px;
+}
+
+.historial-capture-meta,
+.historial-capture-summary {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.historial-capture-meta {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.historial-capture-summary {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+.historial-capture-meta div,
+.historial-capture-summary div,
+.historial-capture-total {
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    padding: 10px;
+    font-size: 15px;
+}
+
+.historial-capture-meta span,
+.historial-capture-summary span,
+.historial-capture-total span {
+    display: block;
+    color: #475569;
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 3px;
+}
+
+.historial-capture-meta strong,
+.historial-capture-summary strong,
+.historial-capture-total strong {
+    color: #111827;
+    font-size: 17px;
+}
+
+.historial-capture-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #111827;
+    font-size: 17px;
+    table-layout: fixed;
+}
+
+.historial-capture-table th,
+.historial-capture-table td {
+    border: 1px solid #94a3b8;
+    padding: 9px 11px;
+    vertical-align: middle;
+}
+
+.historial-capture-table th {
+    background: #e2e8f0;
+    color: #111827;
+    font-size: 13px;
+    text-transform: uppercase;
+    font-weight: 800;
+}
+
+.historial-capture-table td:not(:first-child):not(:nth-child(2)) {
+    text-align: center;
+    font-weight: 700;
+}
+
+.historial-capture-table tr:nth-child(even) td {
+    background: #f8fafc;
+}
+
+.historial-capture-total {
+    margin-top: 18px;
+    display: flex;
+    justify-content: space-around;
+    gap: 18px;
+}
+
+.capture-estado-ok { color: #166534; }
+.capture-estado-ingresar { color: #1d4ed8; }
+.capture-estado-egresar { color: #b91c1c; }
+.capture-estado-pendiente { color: #92400e; }
+
+[data-theme="dark"] .detalle-table tr[style],
+[data-theme="dark"] .detalle-table td[style] {
+    background: var(--card-bg) !important;
+}
+
+[data-theme="dark"] .detalle-table th[style] {
+    background: var(--bg) !important;
+    color: var(--text-light) !important;
+}
+
+[data-theme="dark"] .detalle-table code[style] {
+    background: var(--bg) !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+}
+
+[data-theme="dark"] #detalle-conteo > div[style] {
+    background: var(--bg) !important;
+    border: 1px solid var(--border);
+}
+
+[data-theme="dark"] #detalle-conteo div[style*="color: #1e293b"],
+[data-theme="dark"] #detalle-conteo div[style*="color: #64748b"] {
+    color: var(--text) !important;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h1>📜 Hist. Cigarrillos</h1>
+                <div id="user-info"></div>
+            </div>
+            <nav class="main-nav" id="main-nav"></nav>
+        </header>
+
+        <main>
+            <div class="section-header">
+                <h2>Conteos Realizados</h2>
+                <button onclick="exportarHistorial()" class="btn-export">📥 Exportar Todo</button>
+            </div>
+
+            <div id="historial-list" class="historial-list">
+                <!-- Se carga dinámicamente -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de Detalle -->
+    <div id="modal-detalle" class="modal-detalle">
+        <div class="modal-content-detalle">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                <h2>📋 Detalle del Conteo</h2>
+                <div class="modal-actions">
+                    <button onclick="cerrarModalDetalle()" class="btn-secondary" style="padding: 12px 20px; border-radius: 8px; border: none; cursor: pointer; background: var(--secondary); color: white;">✕ Cerrar</button>
+                    <button onclick="capturarDetalle()" class="capture-btn" id="btn-capturar">
+                        📸 Generar imagen legible
+                    </button>
+                </div>
+            </div>
+            
+            <!-- ÁREA QUE SE CAPTURARÁ -->
+            <div id="capture-area">
+                <div class="capture-header">
+                    <h2>🚬 CONTEO DE CIGARRILLOS</h2>
+                    <p style="color: var(--text-light);">Reporte de Inventario Físico</p>
+                </div>
+                
+                <div class="capture-info" id="capture-info">
+                    <!-- Se llena dinámicamente -->
+                </div>
+                
+                <div id="detalle-conteo">
+                    <!-- Se carga dinámicamente -->
+                </div>
+                
+                <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); text-align: center; color: var(--text-light); font-size: 0.85rem;">
+                    Generado el <span id="capture-fecha"></span> • Sistema de Inventario
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificación de captura -->
+    <div id="capture-notification" class="capture-notification">
+        <span style="font-size: 1.5rem;">✅</span>
+        <div>
+            <strong>Imagen lista</strong><br>
+            <small>Se descargó en alta resolución para enviarla por WhatsApp.</small>
+        </div>
+    </div>
+
+    <!-- Librerías -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="js/core/config.js"></script>
+    <script src="js/core/utils.js"></script>
+    <script src="js/core/storage.js"></script>
+    <script src="js/core/init.js"></script>
+    <script src="js/features/categories.js"></script>
+    <script src="js/core/session-navigation.js"></script>
+    <script src="js/features/inventory-items.js"></script>
+    <script src="js/features/auditoria.js"></script>
+    <script src="js/features/cajeros.js"></script>
+    <script src="js/features/reports-export.js"></script>
+    <script src="js/core/ui.js"></script>
+    <script src="js/features/conteos-tabs.js"></script>
+    <script src="js/features/backup.js"></script>
+    <script src="js/features/exhibicion.js"></script>
+    <script src="js/features/neveras.js"></script>
+    <script>
+        let conteoActualParaCaptura = null;
+        let esAdmin = false;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicializar datos primero (sin verificar sesión aún)
+            if (!localStorage.getItem('inventario_cajeros')) {
+                inicializarDatos();
+            } else {
+                actualizarNavegacion();
+            }
+            
+            // Ahora verificar sesión
+            if (!verificarSesion()) return;
+            
+            // Determinar si es admin
+            esAdmin = esAdminActual();
+            
+            // Cargar contenido de la página
+            cargarHistorial();
+            
+            // Mostrar usuario en header
+            mostrarUsuarioActual();
+            
+            // Verificar si hay parámetro para abrir detalle automáticamente
+            const urlParams = new URLSearchParams(window.location.search);
+            const conteoId = urlParams.get('ver');
+            
+            if (conteoId) {
+                setTimeout(() => {
+                    verDetalleConteo(conteoId);
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }, 500);
+            }
+        });
+
+        function cargarHistorial() {
+            const historial = obtenerHistorialConteos();
+            const contenedor = document.getElementById('historial-list');
+
+            if (historial.length === 0) {
+                contenedor.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <h3>No hay conteos registrados</h3>
+                    </div>
+                `;
+                return;
+            }
+
+            contenedor.innerHTML = historial.map(conteo => {
+                const fecha = new Date(conteo.fechaFin || conteo.fecha).toLocaleString('es-ES');
+                const resumen = conteo.resumen || {};
+                
+                const esConteoCategoria = conteo.tipo === 'conteo_categoria';
+                const tipoLabel = esConteoCategoria ? '📊 Categoría' : '🚬 Cigarrillos';
+                const tipoClase = esConteoCategoria ? 'historial-tipo-categoria' : 'historial-tipo-cigarrillos';
+                const tituloConteo = esConteoCategoria ? conteo.categoriaNombre : 'Conteo de Cigarrillos';
+
+                let accionesHtml = `
+                    <button onclick="verDetalleConteo('${conteo.id}')" class="btn-primary">Ver Detalle</button>
+                `;
+                
+                if (esAdmin) {
+                    accionesHtml += `
+                        <button onclick="eliminarConteo('${conteo.id}')" class="btn-delete-conteo" title="Eliminar conteo">🗑️</button>
+                    `;
+                }
+
+                return `
+                    <div class="conteo-card" id="conteo-card-${conteo.id}">
+                        <div class="conteo-header">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                    <span class="historial-tipo-badge ${tipoClase}">
+                                        ${tipoLabel}
+                                    </span>
+                                    <span style="font-size: 0.85rem; color: var(--text-light);">
+                                        ${tituloConteo}
+                                    </span>
+                                </div>
+                                <div class="conteo-fecha">${fecha}</div>
+                                <div class="conteo-cajero">👤 ${conteo.cajeroNombre} (${conteo.cajeroCodigo})</div>
+                            </div>
+                            <div class="conteo-actions">
+                                ${accionesHtml}
+                            </div>
+                        </div>
+                        <div class="conteo-resumen">
+                            <div class="resumen-item">
+                                <div class="resumen-num">${resumen.total || 0}</div>
+                                <div class="resumen-label">Total</div>
+                            </div>
+                            <div class="resumen-item">
+                                <div class="resumen-num" style="color: var(--success);">${resumen.ok || 0}</div>
+                                <div class="resumen-label">OK</div>
+                            </div>
+                            <div class="resumen-item">
+                                <div class="resumen-num" style="color: var(--primary);">${resumen.ingresar || 0}</div>
+                                <div class="resumen-label">Ingresar</div>
+                            </div>
+                            <div class="resumen-item">
+                                <div class="resumen-num" style="color: var(--danger);">${resumen.egresar || 0}</div>
+                                <div class="resumen-label">Egresar</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function eliminarConteo(id) {
+            if (!esAdmin) {
+                mostrarNotificacion('Solo el administrador puede eliminar conteos', 'error');
+                return;
+            }
+
+            const historial = obtenerHistorialConteos();
+            const conteo = historial.find(c => c.id === id);
+            
+            if (!conteo) {
+                mostrarNotificacion('Conteo no encontrado', 'error');
+                return;
+            }
+
+            const fecha = new Date(conteo.fechaFin || conteo.fecha).toLocaleString('es-ES');
+            
+            if (!confirm(`⚠️ ¿Eliminar este conteo permanentemente?\n\n📅 Fecha: ${fecha}\n👤 Cajero: ${conteo.cajeroNombre}\n📦 Productos: ${conteo.productos?.length || 0}\n\nEsta acción no se puede deshacer.`)) {
+                return;
+            }
+
+            const nuevoHistorial = historial.filter(c => c.id !== id);
+            guardarDatos('historial_conteos', nuevoHistorial);
+            
+            registrarAuditoria({
+                cajeroId: cajeroActual.id,
+                cajeroNombre: cajeroActual.nombre,
+                cajeroCodigo: cajeroActual.codigo,
+                tipo: 'eliminacion_conteo',
+                categoria: 'cigarrillos',
+                itemNombre: `Conteo eliminado #${id.substr(-6)}`,
+                cantidad: 0,
+                stockAnterior: conteo.productos?.length || 0,
+                stockNuevo: 0
+            });
+
+            const card = document.getElementById(`conteo-card-${id}`);
+            if (card) {
+                card.style.transition = 'all 0.3s ease';
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(-100%)';
+                setTimeout(() => {
+                    card.remove();
+                    if (nuevoHistorial.length === 0) {
+                        cargarHistorial();
+                    }
+                }, 300);
+            }
+
+            mostrarNotificacion('Conteo eliminado correctamente', 'success');
+        }
+
+function verDetalleConteo(id) {
+    const historial = obtenerHistorialConteos();
+    const conteo = historial.find(c => c.id === id);
+
+    if (!conteo) {
+        mostrarNotificacion('Conteo no encontrado', 'error');
+        return;
+    }
+
+    conteoActualParaCaptura = conteo;
+    
+    const esConteoCategoria = conteo.tipo === 'conteo_categoria';
+    const detalleDiv = document.getElementById('detalle-conteo');
+    const productos = conteo.productos || [];
+
+    // Mejorar el formato de la información de captura
+    document.getElementById('capture-info').innerHTML = `
+        <div class="capture-info-item">
+            <div class="capture-info-label">Tipo de Conteo</div>
+            <div class="capture-info-value">${esConteoCategoria ? '📊 Por Categoría' : '🚬 Por Producto'}</div>
+        </div>
+        <div class="capture-info-item">
+            <div class="capture-info-label">${esConteoCategoria ? 'Categoría' : 'Responsable'}</div>
+            <div class="capture-info-value">${esConteoCategoria ? conteo.categoriaNombre : conteo.cajeroNombre}</div>
+        </div>
+        <div class="capture-info-item">
+            <div class="capture-info-label">Fecha y Hora</div>
+            <div class="capture-info-value">${new Date(conteo.fechaFin || conteo.fecha).toLocaleString('es-ES', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit', 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: false 
+            })}</div>
+        </div>
+        ${conteo.observaciones ? `
+        <div class="capture-info-item" style="grid-column: span 3;">
+            <div class="capture-info-label">Observaciones</div>
+            <div class="capture-info-value">${conteo.observaciones}</div>
+        </div>
+        ` : ''}
+    `;
+    
+    document.getElementById('capture-fecha').textContent = new Date().toLocaleString('es-ES', {
+        dateStyle: 'full',
+        timeStyle: 'medium'
+    });
+
+    // Generar tabla con mejor formato
+    if (esConteoCategoria) {
+        detalleDiv.innerHTML = `
+            <table class="detalle-table" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);">
+                        <th style="text-align: left; padding: 12px;">ID</th>
+                        <th style="text-align: left; padding: 12px;">Producto</th>
+                        <th style="text-align: center; padding: 12px;">Stock Sistema</th>
+                        <th style="text-align: center; padding: 12px;">Stock Real</th>
+                        <th style="text-align: center; padding: 12px;">Diferencia</th>
+                        <th style="text-align: center; padding: 12px;">Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${productos.map((p, index) => {
+                        const tieneReal = p.stockReal !== null && p.stockReal !== undefined;
+                        const diferencia = tieneReal ? p.stockReal - p.cantidad : 0;
+                        
+                        let estadoColor = '';
+                        let estadoBg = '';
+                        switch(p.estado) {
+                            case 'OK': 
+                                estadoColor = '#059669'; 
+                                estadoBg = '#d1fae5';
+                                break;
+                            case 'INGRESAR': 
+                                estadoColor = '#2563eb'; 
+                                estadoBg = '#dbeafe';
+                                break;
+                            case 'EGRESAR': 
+                                estadoColor = '#dc2626'; 
+                                estadoBg = '#fee2e2';
+                                break;
+                            default: 
+                                estadoColor = '#92400e'; 
+                                estadoBg = '#fef3c7';
+                        }
+                        
+                        return `
+                            <tr style="${index % 2 === 0 ? 'background: white;' : 'background: #fafafa;'}">
+                                <td style="text-align: left; padding: 10px;"><code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">${p.id}</code></td>
+                                <td style="text-align: left; padding: 10px; font-weight: 500;">${p.nombre}</td>
+                                <td style="text-align: center; padding: 10px;">${p.cantidad}</td>
+                                <td style="text-align: center; padding: 10px; font-weight: 600; color: ${tieneReal ? '#2563eb' : '#64748b'};">
+                                    ${tieneReal ? p.stockReal : '-'}
+                                </td>
+                                <td style="text-align: center; padding: 10px; font-weight: 700; color: ${diferencia > 0 ? '#059669' : (diferencia < 0 ? '#dc2626' : '#64748b')}">
+                                    ${tieneReal ? (diferencia > 0 ? `+${diferencia}` : diferencia) : '-'}
+                                </td>
+                                <td style="text-align: center; padding: 10px;">
+                                    <span style="background: ${estadoBg}; color: ${estadoColor}; padding: 4px 12px; border-radius: 20px; font-weight: 600; font-size: 0.85rem;">
+                                        ${p.estado || 'PENDIENTE'}
+                                    </span>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        `;
+    } else {
+        // Similar mejora para la tabla de cigarrillos...
+        detalleDiv.innerHTML = `
+            <table class="detalle-table" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);">
+                        <th style="text-align: left; padding: 12px;">Código</th>
+                        <th style="text-align: left; padding: 12px;">Producto</th>
+                        <th style="text-align: center; padding: 12px;">Stock Sistema</th>
+                        <th style="text-align: center; padding: 12px; color: #8b5cf6;">🏭 Bodega</th>
+                        <th style="text-align: center; padding: 12px; color: #0891b2;">🏪 Exhibición</th>
+                        <th style="text-align: center; padding: 12px; color: #2563eb;">📊 Total</th>
+                        <th style="text-align: center; padding: 12px;">Diferencia</th>
+                        <th style="text-align: center; padding: 12px;">Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${productos.map((p, index) => {
+                        const diferencia = (p.conteoTotal !== null && p.conteoTotal !== undefined) ? p.conteoTotal - p.stockSistema : 0;
+                        const estado = p.estado || 'PENDIENTE';
+
+                        let estadoColor = '';
+                        let estadoBg = '';
+                        switch(estado) {
+                            case 'OK': 
+                                estadoColor = '#059669'; 
+                                estadoBg = '#d1fae5';
+                                break;
+                            case 'INGRESAR': 
+                                estadoColor = '#2563eb'; 
+                                estadoBg = '#dbeafe';
+                                break;
+                            case 'EGRESAR': 
+                                estadoColor = '#dc2626'; 
+                                estadoBg = '#fee2e2';
+                                break;
+                            default: 
+                                estadoColor = '#92400e'; 
+                                estadoBg = '#fef3c7';
+                        }
+
+                        return `
+                            <tr style="${index % 2 === 0 ? 'background: white;' : 'background: #fafafa;'}">
+                                <td style="text-align: left; padding: 10px;"><code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">${p.codigo}</code></td>
+                                <td style="text-align: left; padding: 10px; font-weight: 500;">${p.nombre}</td>
+                                <td style="text-align: center; padding: 10px;">${p.stockSistema}</td>
+                                <td style="text-align: center; padding: 10px; font-weight: 600; color: #8b5cf6;">${p.conteoBodega !== null ? p.conteoBodega : '-'}</td>
+                                <td style="text-align: center; padding: 10px; font-weight: 600; color: #0891b2;">${p.conteoExhibicion !== null ? p.conteoExhibicion : '-'}</td>
+                                <td style="text-align: center; padding: 10px; font-weight: 700; color: #2563eb;">${p.conteoTotal !== null ? p.conteoTotal : '-'}</td>
+                                <td style="text-align: center; padding: 10px; font-weight: 700; color: ${diferencia > 0 ? '#059669' : (diferencia < 0 ? '#dc2626' : '#64748b')}">
+                                    ${p.conteoTotal !== null ? (diferencia > 0 ? `+${diferencia}` : diferencia) : '-'}
+                                </td>
+                                <td style="text-align: center; padding: 10px;">
+                                    <span style="background: ${estadoBg}; color: ${estadoColor}; padding: 4px 12px; border-radius: 20px; font-weight: 600; font-size: 0.85rem;">
+                                        ${estado}
+                                    </span>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        `;
+    }
+
+    // Agregar totales al final
+    const totales = productos.reduce((acc, p) => {
+        if (esConteoCategoria) {
+            acc.totalSistema += p.cantidad || 0;
+            acc.totalReal += p.stockReal || 0;
+        } else {
+            acc.totalSistema += p.stockSistema || 0;
+            acc.totalReal += p.conteoTotal || 0;
+        }
+        return acc;
+    }, { totalSistema: 0, totalReal: 0 });
+
+    const diferenciaTotal = totales.totalReal - totales.totalSistema;
+
+    detalleDiv.innerHTML += `
+        <div style="margin-top: 24px; padding: 16px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 8px; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 16px;">
+            <div style="text-align: center;">
+                <div style="font-size: 0.85rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Total Sistema</div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #1e293b;">${totales.totalSistema}</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 0.85rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Total Real</div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #2563eb;">${totales.totalReal}</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 0.85rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Diferencia Total</div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: ${diferenciaTotal > 0 ? '#059669' : (diferenciaTotal < 0 ? '#dc2626' : '#64748b')}">
+                    ${diferenciaTotal > 0 ? `+${diferenciaTotal}` : diferenciaTotal}
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('modal-detalle').style.display = 'block';
+}
+
+function escaparHtmlHistorial(valor) {
+    return String(valor ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function obtenerClaseEstadoReporte(estado) {
+    const normalizado = String(estado || 'PENDIENTE').toLowerCase();
+    return ['ok', 'ingresar', 'egresar'].includes(normalizado)
+        ? `capture-estado-${normalizado}`
+        : 'capture-estado-pendiente';
+}
+
+function construirHojaReporteHistorial(conteo) {
+    const esConteoCategoria = conteo.tipo === 'conteo_categoria';
+    const productos = conteo.productos || [];
+    const resumen = conteo.resumen || {};
+    const sheet = document.createElement('div');
+    const titulo = esConteoCategoria ? 'Conteo por Categoría' : 'Conteo de Cigarrillos';
+    const fechaConteo = new Date(conteo.fechaFin || conteo.fecha || Date.now()).toLocaleString('es-ES');
+
+    const totales = productos.reduce((acc, p) => {
+        if (esConteoCategoria) {
+            acc.totalSistema += Number(p.cantidad || 0);
+            acc.totalReal += Number(p.stockReal || 0);
+        } else {
+            acc.totalSistema += Number(p.stockSistema || 0);
+            acc.totalReal += Number(p.conteoTotal || 0);
+        }
+        return acc;
+    }, { totalSistema: 0, totalReal: 0 });
+    const diferenciaTotal = totales.totalReal - totales.totalSistema;
+    const diferenciaTotalTexto = diferenciaTotal > 0 ? `+${diferenciaTotal}` : diferenciaTotal;
+
+    const filas = productos.map(p => {
+        if (esConteoCategoria) {
+            const tieneReal = p.stockReal !== null && p.stockReal !== undefined;
+            const diferencia = tieneReal ? Number(p.stockReal || 0) - Number(p.cantidad || 0) : null;
+            const diferenciaTexto = diferencia === null ? '-' : (diferencia > 0 ? `+${diferencia}` : diferencia);
+            const estado = p.estado || 'PENDIENTE';
+
+            return `
+                <tr>
+                    <td>${escaparHtmlHistorial(p.id)}</td>
+                    <td>${escaparHtmlHistorial(p.nombre)}</td>
+                    <td>${p.cantidad ?? 0}</td>
+                    <td>${tieneReal ? p.stockReal : '-'}</td>
+                    <td>${diferenciaTexto}</td>
+                    <td class="${obtenerClaseEstadoReporte(estado)}">${escaparHtmlHistorial(estado)}</td>
+                </tr>
+            `;
+        }
+
+        const tieneTotal = p.conteoTotal !== null && p.conteoTotal !== undefined;
+        const diferencia = tieneTotal ? Number(p.conteoTotal || 0) - Number(p.stockSistema || 0) : null;
+        const diferenciaTexto = diferencia === null ? '-' : (diferencia > 0 ? `+${diferencia}` : diferencia);
+        const estado = p.estado || 'PENDIENTE';
+
+        return `
+            <tr>
+                <td>${escaparHtmlHistorial(p.codigo)}</td>
+                <td>${escaparHtmlHistorial(p.nombre)}</td>
+                <td>${p.stockSistema ?? 0}</td>
+                <td>${p.conteoBodega ?? '-'}</td>
+                <td>${p.conteoExhibicion ?? '-'}</td>
+                <td>${tieneTotal ? p.conteoTotal : '-'}</td>
+                <td>${diferenciaTexto}</td>
+                <td class="${obtenerClaseEstadoReporte(estado)}">${escaparHtmlHistorial(estado)}</td>
+            </tr>
+        `;
+    }).join('');
+
+    sheet.className = 'historial-capture-sheet';
+    sheet.innerHTML = `
+        <h1>${escaparHtmlHistorial(titulo)}</h1>
+        <div class="capture-subtitle">Reporte de inventario físico desde historial</div>
+        <div class="historial-capture-meta">
+            <div><span>Conteo</span><strong>#${escaparHtmlHistorial(conteo.id?.slice(-6))}</strong></div>
+            <div><span>Responsable</span><strong>${escaparHtmlHistorial(conteo.cajeroNombre || '-')}</strong></div>
+            <div><span>${esConteoCategoria ? 'Categoría' : 'Código'}</span><strong>${escaparHtmlHistorial(esConteoCategoria ? conteo.categoriaNombre : conteo.cajeroCodigo)}</strong></div>
+            <div><span>Fecha</span><strong>${escaparHtmlHistorial(fechaConteo)}</strong></div>
+        </div>
+        <div class="historial-capture-summary">
+            <div><span>Total</span><strong>${resumen.total || productos.length}</strong></div>
+            <div><span>OK</span><strong>${resumen.ok || 0}</strong></div>
+            <div><span>Ingresar</span><strong>${resumen.ingresar || 0}</strong></div>
+            <div><span>Egresar</span><strong>${resumen.egresar || 0}</strong></div>
+            <div><span>Pendientes</span><strong>${resumen.pendientes || 0}</strong></div>
+        </div>
+        <table class="historial-capture-table">
+            <thead>
+                ${esConteoCategoria ? `
+                    <tr>
+                        <th style="width: 150px;">ID</th>
+                        <th style="width: 430px;">Producto</th>
+                        <th style="width: 150px;">Sistema</th>
+                        <th style="width: 140px;">Real</th>
+                        <th style="width: 140px;">Diferencia</th>
+                        <th style="width: 150px;">Estado</th>
+                    </tr>
+                ` : `
+                    <tr>
+                        <th style="width: 150px;">Código</th>
+                        <th style="width: 430px;">Producto</th>
+                        <th style="width: 120px;">Sistema</th>
+                        <th style="width: 110px;">Bodega</th>
+                        <th style="width: 120px;">Exhibición</th>
+                        <th style="width: 100px;">Total</th>
+                        <th style="width: 120px;">Diferencia</th>
+                        <th style="width: 130px;">Estado</th>
+                    </tr>
+                `}
+            </thead>
+            <tbody>${filas}</tbody>
+        </table>
+        <div class="historial-capture-total">
+            <div><span>Total Sistema</span><strong>${totales.totalSistema}</strong></div>
+            <div><span>Total Real</span><strong>${totales.totalReal}</strong></div>
+            <div><span>Diferencia Total</span><strong>${diferenciaTotalTexto}</strong></div>
+        </div>
+    `;
+
+    document.body.appendChild(sheet);
+    return sheet;
+}
+
+async function capturarDetalle() {
+    if (!conteoActualParaCaptura) {
+        mostrarNotificacion('Primero abre el detalle de un conteo', 'warning');
+        return;
+    }
+
+    const btn = document.getElementById('btn-capturar');
+    const notification = document.getElementById('capture-notification');
+
+    if (!btn || typeof html2canvas !== 'function') {
+        mostrarNotificacion('No se pudo cargar el generador de imagen', 'error');
+        return;
+    }
+
+    const textoOriginal = btn.innerHTML;
+    btn.classList.add('capturing');
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Generando...';
+
+    const sheet = construirHojaReporteHistorial(conteoActualParaCaptura);
+
+    try {
+        const anchoHoja = Math.ceil(sheet.scrollWidth);
+        const altoHoja = Math.ceil(sheet.scrollHeight);
+        const escala = Math.max(1, Math.min(3, 28000 / Math.max(altoHoja, 1)));
+        const canvas = await html2canvas(sheet, {
+            scale: escala,
+            backgroundColor: '#ffffff',
+            useCORS: true,
+            logging: false,
+            windowWidth: anchoHoja + 120,
+            windowHeight: altoHoja + 120,
+            width: anchoHoja,
+            height: altoHoja
+        });
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png', 1));
+
+        if (!blob) {
+            throw new Error('No se pudo crear la imagen PNG');
+        }
+
+        const nombreArchivo = `historial_cigarrillos_${new Date().toISOString().split('T')[0]}.png`;
+        const objectUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = nombreArchivo;
+        link.href = objectUrl;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+
+        try {
+            if (navigator.clipboard && window.ClipboardItem) {
+                await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            }
+        } catch (clipboardError) {
+            console.warn('No se pudo copiar la imagen al portapapeles:', clipboardError);
+        }
+
+        notification?.classList.add('show');
+        setTimeout(() => notification?.classList.remove('show'), 3500);
+    } catch (error) {
+        console.error('Error al capturar:', error);
+        mostrarNotificacion('Error al generar la imagen', 'error');
+    } finally {
+        sheet.remove();
+        btn.classList.remove('capturing');
+        btn.disabled = false;
+        btn.innerHTML = textoOriginal;
+    }
+}
+        
+        function cerrarModalDetalle() {
+            document.getElementById('modal-detalle').style.display = 'none';
+            conteoActualParaCaptura = null;
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal-detalle');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        function exportarHistorial() {
+            const historial = obtenerHistorialConteos();
+            if (historial.length === 0) {
+                mostrarNotificacion('No hay datos para exportar', 'error');
+                return;
+            }
+
+            const datos = historial.flatMap(conteo => {
+                return (conteo.productos || []).map(p => ({
+                    'Fecha Conteo': new Date(conteo.fechaFin || conteo.fecha).toLocaleString('es-ES'),
+                    'Cajero': conteo.cajeroNombre,
+                    'Código Cajero': conteo.cajeroCodigo,
+                    'Código Producto': p.codigo || p.id,
+                    'Producto': p.nombre,
+                    'Stock Sistema': p.stockSistema || p.cantidad,
+                    'Conteo Bodega': p.conteoBodega !== null && p.conteoBodega !== undefined ? p.conteoBodega : '',
+                    'Conteo Exhibición': p.conteoExhibicion !== null && p.conteoExhibicion !== undefined ? p.conteoExhibicion : '',
+                    'Conteo Total': p.conteoTotal !== null && p.conteoTotal !== undefined ? p.conteoTotal : '',
+                    'Stock Real': p.stockReal !== null && p.stockReal !== undefined ? p.stockReal : '',
+                    'Diferencia': p.conteoTotal !== null && p.conteoTotal !== undefined ? p.conteoTotal - (p.stockSistema || p.cantidad) : 
+                                  (p.stockReal !== null && p.stockReal !== undefined ? p.stockReal - p.cantidad : ''),
+                    'Estado': p.estado || 'PENDIENTE'
+                }));
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(datos);
+
+            ws['!cols'] = [
+                { wch: 20 }, { wch: 20 }, { wch: 15 },
+                { wch: 15 }, { wch: 35 }, { wch: 15 },
+                { wch: 15 }, { wch: 18 }, { wch: 15 },
+                { wch: 12 }, { wch: 12 }, { wch: 12 }
+            ];
+
+            XLSX.utils.book_append_sheet(wb, ws, 'Historial Conteos');
+
+            XLSX.writeFile(wb, `historial_conteos_${new Date().toISOString().split('T')[0]}.xlsx`);
+            mostrarNotificacion('Historial exportado correctamente', 'success');
+        }
+    </script>
+</body>
+</html>
+
+
+
+

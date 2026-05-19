@@ -1,0 +1,607 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categoría - Inventario</title>
+    <link rel="stylesheet" href="css/estilos.css">
+    <style>
+        /* Estilos para sección de importación/exportación */
+        .import-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+            max-height: 70px;
+            overflow: hidden;
+            transition: max-height 0.5s ease, box-shadow 0.3s ease;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .import-section:hover {
+            max-height: 500px;
+            box-shadow: var(--shadow-lg);
+            cursor: default;
+        }
+
+        .import-section::before {
+            content: '▼ Expandir';
+            position: absolute;
+            top: 28px;
+            right: 24px;
+            font-size: 0.85rem;
+            color: var(--primary);
+            font-weight: 600;
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .import-section:hover::before {
+            opacity: 0;
+        }
+
+        .import-section h3 {
+            margin: 0 0 20px 0;
+            padding-right: 80px;
+            pointer-events: none;
+        }
+
+        .import-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 12px;
+        }
+
+        .import-tab {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-light);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .import-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .import-content {
+            display: none;
+        }
+
+        .import-content.active {
+            display: block;
+        }
+
+        .file-drop-zone {
+            border: 3px dashed var(--border);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-drop-zone:hover {
+            border-color: var(--primary);
+            background: var(--bg);
+        }
+
+        .file-drop-zone.dragover {
+            border-color: var(--success);
+            background: var(--success-soft);
+        }
+
+        .paste-zone {
+            width: 100%;
+            min-height: 150px;
+            padding: 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+        }
+
+        .formato-info {
+            background: var(--bg);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+        }
+
+        .formato-info code {
+            background: var(--muted-control-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <h1 id="cat-titulo">📦 Cargando...</h1>
+                <div id="user-info"></div>
+            </div>
+            <nav class="main-nav" id="main-nav">
+                <!-- Se carga dinámicamente -->
+            </nav>
+        </header>
+
+        <main>
+            <!-- SECCIÓN DE IMPORTACIÓN/EXPORTACIÓN (SOLO ADMIN) -->
+            <div id="import-section" class="import-section" style="display: none;">
+                <h3>📥 Importar / 📤 Exportar Productos</h3>
+                
+                <div class="formato-info">
+                    <strong>📋 Formato esperado:</strong><br>
+                    <code>ID</code> | <code>Nombre</code> | <code>Cantidad</code> | <code>Unidad</code> | <code>Stock Mínimo</code><br>
+                    <small style="color: var(--text-light);">Ejemplo: PROD-001 | Pan de Completo | 50 | unidades | 20</small>
+                </div>
+
+                <div class="import-tabs">
+                    <button class="import-tab active" onclick="event.stopPropagation(); switchImportTab('file')">📁 Importar Excel</button>
+                    <button class="import-tab" onclick="event.stopPropagation(); switchImportTab('paste')">📋 Pegar Datos</button>
+                    <button class="import-tab" onclick="event.stopPropagation(); switchImportTab('export')">📤 Exportar</button>
+                </div>
+
+                <!-- Importar por archivo -->
+                <div id="tab-file" class="import-content active">
+                    <div class="file-drop-zone" id="drop-zone" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
+                        <div style="font-size: 3rem; margin-bottom: 12px;">📁</div>
+                        <p style="font-weight: 600; margin-bottom: 8px;">Arrastra archivo Excel aquí</p>
+                        <p style="color: var(--text-light); font-size: 0.9rem;">o haz clic para seleccionar</p>
+                        <input type="file" id="file-input" accept=".xlsx,.xls" style="display: none;">
+                    </div>
+                </div>
+
+                <!-- Importar por pegado -->
+                <div id="tab-paste" class="import-content">
+                    <textarea id="paste-zone" class="paste-zone" placeholder="Pega aquí los datos de productos...&#10;&#10;Formato:&#10;ID | Nombre | Cantidad | Unidad | Stock Mínimo&#10;PROD-001 | Pan de Completo | 50 | unidades | 20&#10;PROD-002 | Vienesas | 100 | unidades | 30"></textarea>
+                    <button onclick="event.stopPropagation(); procesarDatosPegados()" class="btn-primary" style="margin-top: 12px; width: 100%;">
+                        📋 Procesar Datos
+                    </button>
+                </div>
+
+                <!-- Exportar -->
+                <div id="tab-export" class="import-content">
+                    <div style="text-align: center; padding: 30px;">
+                        <div style="font-size: 3rem; margin-bottom: 12px;">📤</div>
+                        <p style="font-weight: 600; margin-bottom: 16px;">Exportar productos de esta categoría</p>
+                        <button onclick="event.stopPropagation(); exportarProductosExcel()" class="btn-export" style="padding: 12px 32px;">
+                            📥 Descargar Excel
+                        </button>
+                    </div>
+                </div>
+                                <!-- SECCIÓN DE ADMIN (SOLO ADMIN) -->
+                <div id="admin-section" class="admin-backup-section" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 2px dashed var(--border);">
+                    <h4 style="margin-bottom: 16px; color: var(--danger); display: flex; align-items: center; gap: 8px;">
+                        ⚠️ Zona de Administración
+                    </h4>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                        <!-- Exportar Backup -->
+                        <button onclick="event.stopPropagation(); exportarLocalStorageCompleto()" class="btn-export" style="background: #3b82f6; color: white; padding: 12px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            💾 Guardar Todo (Backup)
+                        </button>
+                        
+                        <!-- Importar Backup -->
+                        <div style="position: relative;">
+                            <input type="file" id="input-restore-backup" accept=".json" style="display: none;" onchange="importarLocalStorageCompleto(event)">
+                            <button onclick="event.stopPropagation(); document.getElementById('input-restore-backup').click()" class="btn-export" style="background: #8b5cf6; color: white; padding: 12px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                📂 Cargar Backup
+                            </button>
+                        </div>
+                        
+                        <!-- Limpiar Todo -->
+                        <button onclick="event.stopPropagation(); limpiarLocalStorageCompleto()" class="btn-delete" style="background: var(--danger); color: white; padding: 12px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            🗑️ Borrar Todo
+                        </button>
+                    </div>
+                    
+                    <p style="margin-top: 12px; font-size: 0.85rem; color: var(--text-light);">
+                        💡 <strong>Guardar Todo:</strong> Exporta todos los datos a un archivo JSON.<br>
+                        💡 <strong>Cargar Backup:</strong> Restaura datos desde un archivo JSON previamente guardado.<br>
+                        ⚠️ <strong>Borrar Todo:</strong> Elimina permanentemente todos los datos. Requiere confirmación.
+                    </p>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <div>
+                    <h2>Items en Stock</h2>
+                    <p id="cat-descripcion" style="color: var(--text-light); margin-top: 4px;">Cargando descripción...</p>
+                </div>
+                <button id="btn-agregar-item" class="btn-add">+ Agregar Nuevo Item</button>
+            </div>
+
+            <div class="inventory-grid" id="items-grid">
+                <!-- Items se cargan dinámicamente -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal para agregar/editar items -->
+    <div id="modal-item" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="cerrarModal()">&times;</span>
+            <h3 id="modal-title">Agregar Item</h3>
+            <form id="form-item" onsubmit="guardarItem(event)" autocomplete="off">
+                <input type="hidden" id="item-id">
+                
+                <!-- NUEVO: Campo ID personalizado (solo visible en modo nuevo) -->
+                <div class="form-group" id="grupo-id-personalizado">
+                    <label>ID Personalizado (opcional):</label>
+                    <input type="text" id="item-id-personalizado" 
+                        placeholder="Ej: PROD-001 (dejar vacío para auto-generar)"
+                        pattern="[a-zA-Z0-9-_]+"
+                        title="Solo letras, números, guiones y guiones bajos"
+                        autocomplete="off">
+                    <small style="color: var(--text-light); font-size: 0.8rem;">
+                        Si lo dejas vacío, se generará automáticamente
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Nombre del Item:</label>
+                    <input type="text" id="item-nombre" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Cantidad en Stock:</label>
+                    <input type="number" id="item-cantidad" min="0" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Unidad de Medida:</label>
+                    <select id="item-unidad" autocomplete="off">
+                        <option value="unidades">Unidades</option>
+                        <option value="kg">Kilogramos</option>
+                        <option value="litros">Litros</option>
+                        <option value="paquetes">Paquetes</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Stock Mínimo (alerta):</label>
+                    <input type="number" id="item-minimo" min="0" value="10" autocomplete="off">
+                </div>
+                <button type="submit" class="btn-primary">Guardar Item</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="js/core/config.js"></script>
+    <script src="js/core/utils.js"></script>
+    <script src="js/core/storage.js"></script>
+    <script src="js/core/init.js"></script>
+    <script src="js/features/categories.js"></script>
+    <script src="js/core/session-navigation.js"></script>
+    <script src="js/features/inventory-items.js"></script>
+    <script src="js/features/auditoria.js"></script>
+    <script src="js/features/cajeros.js"></script>
+    <script src="js/features/reports-export.js"></script>
+    <script src="js/core/ui.js"></script>
+    <script src="js/features/conteos-tabs.js"></script>
+    <script src="js/features/backup.js"></script>
+    <script src="js/features/exhibicion.js"></script>
+    <script src="js/features/neveras.js"></script>
+    <script>
+        let categoriaActualId = null;
+        let productosImportados = [];
+        let esAdmin = false;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!verificarSesion()) return;
+            
+            esAdmin = esAdminActual();
+            inicializarDatos();
+            
+            // Obtener ID de categoría de la URL
+            const params = new URLSearchParams(window.location.search);
+            categoriaActualId = params.get('cat');
+            
+            if (!categoriaActualId) {
+                mostrarNotificacion('No se especificó categoría', 'error');
+                setTimeout(() => window.location.href = 'index.html', 1500);
+                return;
+            }
+            
+            cargarCategoriaDinamica();
+            configurarInterfaz();
+        });
+
+        function configurarInterfaz() {
+    // Mostrar sección de importación solo para admin
+    const importSection = document.getElementById('import-section');
+    const adminSection = document.getElementById('admin-section');
+    
+    if (esAdmin && importSection) {
+        importSection.style.display = 'block';
+        configurarEventosImportacion();
+    }
+    
+    // Mostrar sección de admin solo para admin
+    if (esAdmin && adminSection) {
+        adminSection.style.display = 'block';
+    }
+    
+    // Configurar botón de agregar item
+    const btnAgregar = document.getElementById('btn-agregar-item');
+    if (btnAgregar) {
+        if (esAdmin) {
+            btnAgregar.onclick = () => abrirModalNuevo(categoriaActualId);
+        } else {
+            btnAgregar.style.display = 'none';
+        }
+    }
+    
+    // Configurar permisos en cards de items
+    if (!esAdmin) {
+        // Cajeros solo ven botones + y -, no editar/eliminar
+        document.querySelectorAll('.item-actions .btn-edit, .item-actions .btn-delete').forEach(el => {
+            el.style.display = 'none';
+        });
+    }
+}
+
+        function configurarEventosImportacion() {
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('file-input');
+
+            if (!dropZone || !fileInput) return;
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+            });
+
+            dropZone.addEventListener('drop', handleDrop, false);
+            fileInput.addEventListener('change', handleFiles, false);
+        }
+
+        function switchImportTab(tab) {
+            document.querySelectorAll('#import-section .import-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#import-section .import-content').forEach(c => c.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        }
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles({ target: { files: files } });
+        }
+
+        function handleFiles(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                procesarDatosExcel(jsonData);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function procesarDatosExcel(data) {
+            // Ignorar primera fila (headers), datos desde fila 2
+            const filasValidas = data.slice(1);
+            productosImportados = [];
+            
+            filasValidas.forEach((fila, index) => {
+                if (!fila || fila.length < 3) return;
+                
+                const id = String(fila[0] || '').trim();
+                const nombre = String(fila[1] || '').trim();
+                const cantidad = parseInt(fila[2]) || 0;
+                const unidad = String(fila[3] || 'unidades').trim();
+                const minimo = parseInt(fila[4]) || 10;
+                
+                if (id && nombre) {
+                    // Validar formato del ID
+                    if (!/^[a-zA-Z0-9-_]+$/.test(id)) return;
+                    
+                    productosImportados.push({
+                        id: id,
+                        nombre: nombre,
+                        cantidad: cantidad,
+                        unidad: unidad,
+                        minimo: minimo
+                    });
+                }
+            });
+            
+            if (productosImportados.length === 0) {
+                mostrarNotificacion('No se encontraron productos válidos en el archivo', 'error');
+                return;
+            }
+            
+            // Confirmar importación
+            if (confirm(`¿Importar ${productosImportados.length} productos?\n\n⚠️ Los productos con ID duplicado serán actualizados.`)) {
+                importarProductos();
+            }
+        }
+
+        function procesarDatosPegados() {
+            const texto = document.getElementById('paste-zone').value.trim();
+            if (!texto) {
+                mostrarNotificacion('No hay datos para procesar', 'error');
+                return;
+            }
+
+            const lineas = texto.split('\n');
+            productosImportados = [];
+            
+            // Detectar si hay encabezado
+            let inicio = 0;
+            if (lineas[0].toLowerCase().includes('id') || lineas[0].toLowerCase().includes('nombre')) {
+                inicio = 1;
+            }
+
+            for (let i = inicio; i < lineas.length; i++) {
+                const linea = lineas[i].trim();
+                if (!linea) continue;
+
+                // Separar por tabulaciones, punto y coma, o pipe |
+                const columnas = linea.split(/[\t;|]+/).map(c => c.trim());
+                
+                if (columnas.length >= 3) {
+                    const id = columnas[0];
+                    const nombre = columnas[1];
+                    const cantidad = parseInt(columnas[2]) || 0;
+                    const unidad = columnas[3] || 'unidades';
+                    const minimo = parseInt(columnas[4]) || 10;
+                    
+                    if (id && nombre && /^[a-zA-Z0-9-_]+$/.test(id)) {
+                        productosImportados.push({
+                            id: id,
+                            nombre: nombre,
+                            cantidad: cantidad,
+                            unidad: unidad,
+                            minimo: minimo
+                        });
+                    }
+                }
+            }
+            
+            if (productosImportados.length === 0) {
+                mostrarNotificacion('No se pudieron procesar los datos. Verifica el formato.', 'error');
+                return;
+            }
+            
+            if (confirm(`¿Importar ${productosImportados.length} productos?\n\n⚠️ Los productos con ID duplicado serán actualizados.`)) {
+                importarProductos();
+            }
+            
+            document.getElementById('paste-zone').value = '';
+        }
+
+        function importarProductos() {
+            let itemsActuales = obtenerDatos(categoriaActualId);
+            let agregados = 0;
+            let actualizados = 0;
+            
+            productosImportados.forEach(nuevo => {
+                const indexExistente = itemsActuales.findIndex(item => item.id === nuevo.id);
+                
+                if (indexExistente !== -1) {
+                    // Actualizar existente
+                    itemsActuales[indexExistente] = {
+                        ...itemsActuales[indexExistente],
+                        ...nuevo
+                    };
+                    actualizados++;
+                } else {
+                    // Agregar nuevo
+                    itemsActuales.push(nuevo);
+                    agregados++;
+                }
+            });
+            
+            guardarDatos(categoriaActualId, itemsActuales);
+            cargarItemsEnGrid(categoriaActualId);
+            
+            let mensaje = `✅ ${agregados} productos importados`;
+            if (actualizados > 0) {
+                mensaje += ` • ${actualizados} actualizados`;
+            }
+            
+            mostrarNotificacion(mensaje, 'success');
+            
+            // Registrar en auditoría
+            registrarAuditoria({
+                cajeroId: cajeroActual.id,
+                cajeroNombre: cajeroActual.nombre,
+                cajeroCodigo: cajeroActual.codigo,
+                tipo: 'importacion_productos',
+                categoria: categoriaActualId,
+                itemNombre: `Importación de ${agregados} productos`,
+                cantidad: agregados,
+                stockAnterior: itemsActuales.length - agregados,
+                stockNuevo: itemsActuales.length
+            });
+        }
+
+        function exportarProductosExcel() {
+            const items = obtenerDatos(categoriaActualId);
+            const categoria = obtenerCategorias().find(c => c.id === categoriaActualId);
+            
+            if (items.length === 0) {
+                mostrarNotificacion('No hay productos para exportar', 'warning');
+                return;
+            }
+            
+            const datos = items.map(item => ({
+                'ID': item.id,
+                'Nombre': item.nombre,
+                'Cantidad': item.cantidad,
+                'Unidad': item.unidad,
+                'Stock Mínimo': item.minimo
+            }));
+            
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(datos);
+            
+            ws['!cols'] = [
+                { wch: 15 }, { wch: 30 }, { wch: 12 }, 
+                { wch: 12 }, { wch: 15 }
+            ];
+            
+            XLSX.utils.book_append_sheet(wb, ws, categoria?.nombre || 'Productos');
+            
+            // Agregar hoja de instrucciones
+            const instrucciones = [
+                ['INSTRUCCIONES DE IMPORTACIÓN'],
+                [''],
+                ['1. No modifique la estructura de columnas'],
+                ['2. El ID debe ser único dentro de la categoría'],
+                ['3. IDs válidos: letras, números, guiones y guiones bajos'],
+                ['4. Unidades válidas: unidades, kg, litros, paquetes'],
+                [''],
+                ['Formato de importación:'],
+                ['ID | Nombre | Cantidad | Unidad | Stock Mínimo']
+            ];
+            const wsInstrucciones = XLSX.utils.aoa_to_sheet(instrucciones);
+            XLSX.utils.book_append_sheet(wb, wsInstrucciones, 'Instrucciones');
+            
+            const fecha = new Date().toISOString().split('T')[0];
+            const nombreCat = categoria?.nombre?.replace(/\s+/g, '_') || 'categoria';
+            XLSX.writeFile(wb, `productos_${nombreCat}_${fecha}.xlsx`);
+            
+            mostrarNotificacion(`${items.length} productos exportados`, 'success');
+        }
+    </script>
+</body>
+</html>
+
+
+
+

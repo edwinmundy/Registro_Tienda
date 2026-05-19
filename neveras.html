@@ -1,0 +1,677 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Temperatura - Neveras</title>
+    <link rel="stylesheet" href="css/estilos.css">
+    <style>
+        /* Layout principal */
+        .neveras-layout {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 24px;
+        }
+        
+        @media (max-width: 968px) {
+            .neveras-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Panel de gestión de neveras (solo admin) */
+        .panel-gestion-neveras {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+        
+        .panel-gestion-neveras h3 {
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+        }
+        
+        .form-nevera {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .form-nevera input,
+        .form-nevera select {
+            padding: 10px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            width: 100%;
+        }
+        
+        /* Lista de neveras */
+        .neveras-list {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+        }
+        
+        .nevera-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .nevera-item:hover {
+            background: var(--bg);
+        }
+        
+        .nevera-item.selected {
+            background: #eff6ff;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .nevera-info h4 {
+            margin-bottom: 4px;
+        }
+        
+        .nevera-info p {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+        
+        .nevera-temp {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .nevera-temp.normal { color: var(--success); }
+        .nevera-temp.alerta { color: var(--warning); }
+        .nevera-temp.critico { color: var(--danger); }
+        
+        .nevera-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        /* Panel de registro de temperatura */
+        .panel-registro {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+        
+        .form-registro {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .form-registro-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 12px;
+            align-items: end;
+        }
+        
+        @media (max-width: 768px) {
+            .form-registro-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .form-registro input,
+        .form-registro textarea {
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            width: 100%;
+        }
+        
+        .form-registro textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        
+        /* Tabla de registros */
+        .tabla-registros-container {
+            max-height: 500px;
+            overflow-y: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        
+        .tabla-registros {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        
+        .tabla-registros th {
+            background: var(--bg);
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-light);
+            position: sticky;
+            top: 0;
+            border-bottom: 2px solid var(--border);
+        }
+        
+        .tabla-registros td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .tabla-registros tr:hover {
+            background: var(--bg);
+        }
+        
+        .temp-normal { color: var(--success); font-weight: bold; }
+        .temp-alerta { color: var(--warning); font-weight: bold; }
+        .temp-critico { color: var(--danger); font-weight: bold; }
+        
+        .badge-rango {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .badge-normal { background: #d1fae5; color: #065f46; }
+        .badge-alerta { background: #fef3c7; color: #92400e; }
+        .badge-critico { background: #fee2e2; color: #991b1b; }
+        
+        /* Estadísticas */
+        .stats-temperatura {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-temp-card {
+            background: var(--bg);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .stat-temp-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        
+        .stat-temp-label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+        }
+        
+        .empty-state-nevera {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+        }
+        
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+        
+        .admin-badge-nevera {
+            background: #fef3c7;
+            color: #d97706;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <h1>🌡️ Control de Temperatura - Neveras</h1>
+                <div id="user-info"></div>
+            </div>
+            <nav class="main-nav" id="main-nav"></nav>
+        </header>
+
+        <main>
+            <div class="neveras-layout">
+                <!-- COLUMNA IZQUIERDA -->
+                <div>
+                    <!-- Panel para agregar neveras (SOLO ADMIN) -->
+                    <div id="panel-crear-nevera" class="panel-gestion-neveras" style="display: none;">
+                        <h3>➕ Agregar Nueva Nevera</h3>
+                        <form class="form-nevera" onsubmit="crearNeveraSubmit(event)">
+                            <input type="text" id="newname" placeholder="Nombre de la nevera (ej: Nevera Principal)" required>
+                            <input type="text" id="newubicacion" placeholder="Ubicación (ej: Cocina, Almacén, Barra)">
+                            <div class="form-row">
+                                <input type="number" id="newtempmin" placeholder="Temp. Mínima (°C)" value="0" step="0.5">
+                                <input type="number" id="newtempmax" placeholder="Temp. Máxima (°C)" value="10" step="0.5">
+                            </div>
+                            <button type="submit" class="btn-primary">➕ Crear Nevera</button>
+                        </form>
+                    </div>
+
+                    <!-- Lista de neveras -->
+                    <div class="neveras-list">
+                        <h3 style="margin-bottom: 16px;">🗄️ Neveras Registradas</h3>
+                        <div id="lista-neveras">
+                            <div class="empty-state-nevera">
+                                <div class="empty-icon">🗄️</div>
+                                <p>No hay neveras registradas</p>
+                                <p style="font-size: 0.85rem;">El administrador puede agregar neveras</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COLUMNA DERECHA -->
+                <div class="panel-registro">
+                    <div id="nevera-seleccionada-info" style="margin-bottom: 20px;">
+                        <h2 id="nevera-titulo" style="color: var(--text-light);">📋 Selecciona una nevera</h2>
+                    </div>
+
+                    <!-- Estadísticas -->
+                    <div id="stats-container" style="display: none;">
+                        <div class="stats-temperatura">
+                            <div class="stat-temp-card">
+                                <div class="stat-temp-value" id="stat-ultima">-</div>
+                                <div class="stat-temp-label">Últ. Registro</div>
+                            </div>
+                            <div class="stat-temp-card">
+                                <div class="stat-temp-value" id="stat-promedio">-</div>
+                                <div class="stat-temp-label">Promedio</div>
+                            </div>
+                            <div class="stat-temp-card">
+                                <div class="stat-temp-value" id="stat-min">-</div>
+                                <div class="stat-temp-label">Mínima</div>
+                            </div>
+                            <div class="stat-temp-card">
+                                <div class="stat-temp-value" id="stat-max">-</div>
+                                <div class="stat-temp-label">Máxima</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulario para registrar temperatura -->
+                    <div id="form-registro-container" class="form-registro" style="display: none;">
+                        <h4 style="margin-bottom: 12px;">🌡️ Registrar Temperatura</h4>
+                        <div class="form-registro-grid">
+                            <input type="number" id="temp-valor" placeholder="Temperatura (°C)" step="0.1" required>
+                            <textarea id="temp-obs" placeholder="Observaciones (opcional)" rows="1"></textarea>
+                            <button onclick="registrarTemperaturaSubmit()" class="btn-primary">💾 Guardar Registro</button>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de historial -->
+                    <div id="tabla-container" style="display: none;">
+                        <h4 style="margin-bottom: 12px;">📜 Historial de Temperaturas</h4>
+                        <div class="tabla-registros-container">
+                            <table class="tabla-registros">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha/Hora</th>
+                                        <th>Cajero</th>
+                                        <th>Temperatura</th>
+                                        <th>Estado</th>
+                                        <th>Observaciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-registros">
+                                    <!-- Se llena dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="empty-selection" class="empty-state-nevera">
+                        <div class="empty-icon">🌡️</div>
+                        <h3>Selecciona una nevera</h3>
+                        <p>Haz clic en una nevera de la lista izquierda para ver sus registros</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="js/core/config.js"></script>
+    <script src="js/core/utils.js"></script>
+    <script src="js/core/storage.js"></script>
+    <script src="js/core/init.js"></script>
+    <script src="js/features/categories.js"></script>
+    <script src="js/core/session-navigation.js"></script>
+    <script src="js/features/inventory-items.js"></script>
+    <script src="js/features/auditoria.js"></script>
+    <script src="js/features/cajeros.js"></script>
+    <script src="js/features/reports-export.js"></script>
+    <script src="js/core/ui.js"></script>
+    <script src="js/features/conteos-tabs.js"></script>
+    <script src="js/features/backup.js"></script>
+    <script src="js/features/exhibicion.js"></script>
+    <script src="js/features/neveras.js"></script>
+    <script>
+        let neveraSeleccionada = null;
+        let esAdmin = false;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!verificarSesion()) return;
+            inicializarDatos();
+            
+            esAdmin = esAdminActual();
+            
+            configurarInterfazAdmin();
+            cargarListaNeveras();
+        });
+
+        function configurarInterfazAdmin() {
+            const panelCrear = document.getElementById('panel-crear-nevera');
+            if (esAdmin && panelCrear) {
+                panelCrear.style.display = 'block';
+            }
+        }
+
+        function cargarListaNeveras() {
+            const contenedor = document.getElementById('lista-neveras');
+            const neveras = obtenerNeveras();
+            
+            if (neveras.length === 0) {
+                contenedor.innerHTML = `
+                    <div class="empty-state-nevera">
+                        <div class="empty-icon">🗄️</div>
+                        <p>No hay neveras registradas</p>
+                        ${esAdmin ? '<p style="font-size: 0.85rem;">Usa el formulario superior para agregar</p>' : '<p style="font-size: 0.85rem;">Contacta al administrador</p>'}
+                    </div>
+                `;
+                return;
+            }
+            
+            const statsNeveras = {};
+            neveras.forEach(n => {
+                statsNeveras[n.id] = obtenerEstadisticasTemperatura(n.id);
+            });
+            
+            contenedor.innerHTML = neveras.map(nevera => {
+                const stats = statsNeveras[nevera.id] || {};
+                const ultimaTemp = stats.ultimaTemp;
+                let tempClass = '';
+                let tempDisplay = '';
+                
+                if (ultimaTemp !== null && ultimaTemp !== undefined) {
+                    if (ultimaTemp < nevera.temperaturaMin) tempClass = 'critico';
+                    else if (ultimaTemp > nevera.temperaturaMax) tempClass = 'alerta';
+                    else tempClass = 'normal';
+                    tempDisplay = `${ultimaTemp}°C`;
+                } else {
+                    tempDisplay = '--°C';
+                }
+                
+                const esSeleccionada = neveraSeleccionada && neveraSeleccionada.id === nevera.id;
+                
+                let accionesHtml = '';
+                if (esAdmin) {
+                    accionesHtml = `
+                        <div class="nevera-actions">
+                            <button class="btn-icon btn-edit" onclick="event.stopPropagation(); editarNeveraPrompt('${nevera.id}')" title="Editar">✏️</button>
+                            <button class="btn-icon btn-delete" onclick="event.stopPropagation(); eliminarNeveraConfirm('${nevera.id}')" title="Eliminar">🗑️</button>
+                        </div>
+                    `;
+                }
+                
+                return `
+                    <div class="nevera-item ${esSeleccionada ? 'selected' : ''}" onclick="seleccionarNevera('${nevera.id}')">
+                        <div class="nevera-info">
+                            <h4>
+                                ${nevera.nombre}
+                                ${nevera.ubicacion ? `<span style="font-size: 0.8rem; color: var(--text-light);">📍 ${nevera.ubicacion}</span>` : ''}
+                            </h4>
+                            <p>Rango: ${nevera.temperaturaMin}°C - ${nevera.temperaturaMax}°C</p>
+                            <p style="font-size: 0.75rem;">📊 ${stats.total || 0} registros</p>
+                        </div>
+                        <div class="nevera-temp ${tempClass}">
+                            ${tempDisplay}
+                        </div>
+                        ${accionesHtml}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function seleccionarNevera(id) {
+            const neveras = obtenerNeveras();
+            neveraSeleccionada = neveras.find(n => n.id === id);
+            
+            if (!neveraSeleccionada) return;
+            
+            // Actualizar UI
+            document.getElementById('nevera-titulo').innerHTML = `
+                🧊 ${neveraSeleccionada.nombre}
+                <span style="font-size: 0.9rem; color: var(--text-light);">
+                    ${neveraSeleccionada.ubicacion ? `📍 ${neveraSeleccionada.ubicacion}` : ''}
+                </span>
+                <span style="font-size: 0.8rem;">Rango: ${neveraSeleccionada.temperaturaMin}°C - ${neveraSeleccionada.temperaturaMax}°C</span>
+            `;
+            
+            document.getElementById('empty-selection').style.display = 'none';
+            document.getElementById('form-registro-container').style.display = 'block';
+            document.getElementById('tabla-container').style.display = 'block';
+            document.getElementById('stats-container').style.display = 'block';
+            
+            cargarEstadisticasNevera();
+            cargarHistorialTemperatura();
+            cargarListaNeveras(); // Recargar para marcar seleccionada
+        }
+
+        function cargarEstadisticasNevera() {
+            if (!neveraSeleccionada) return;
+            
+            const stats = obtenerEstadisticasTemperatura(neveraSeleccionada.id);
+            
+            document.getElementById('stat-ultima').innerHTML = stats.ultimaTemp !== null ? `${stats.ultimaTemp}°C` : '--';
+            document.getElementById('stat-promedio').innerHTML = stats.promedio !== 0 ? `${stats.promedio}°C` : '--';
+            document.getElementById('stat-min').innerHTML = stats.min !== null ? `${stats.min}°C` : '--';
+            document.getElementById('stat-max').innerHTML = stats.max !== null ? `${stats.max}°C` : '--';
+            
+            // Color según última temperatura
+            const ultimaTemp = stats.ultimaTemp;
+            const statUltima = document.getElementById('stat-ultima');
+            if (ultimaTemp !== null) {
+                if (ultimaTemp < neveraSeleccionada.temperaturaMin) {
+                    statUltima.style.color = 'var(--danger)';
+                } else if (ultimaTemp > neveraSeleccionada.temperaturaMax) {
+                    statUltima.style.color = 'var(--warning)';
+                } else {
+                    statUltima.style.color = 'var(--success)';
+                }
+            }
+        }
+
+        function cargarHistorialTemperatura() {
+            if (!neveraSeleccionada) return;
+            
+            const registros = obtenerRegistrosPorNevera(neveraSeleccionada.id);
+            const tbody = document.getElementById('tabla-registros');
+            
+            if (registros.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="empty-state" style="text-align: center;">No hay registros de temperatura</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = registros.map(reg => {
+                const fecha = new Date(reg.fecha).toLocaleString('es-ES');
+                let tempClass = '';
+                let estadoClass = '';
+                let estadoTexto = '';
+                
+                if (reg.temperatura < neveraSeleccionada.temperaturaMin) {
+                    tempClass = 'temp-critico';
+                    estadoClass = 'badge-critico';
+                    estadoTexto = '❄️ DEMASIADO FRÍO';
+                } else if (reg.temperatura > neveraSeleccionada.temperaturaMax) {
+                    tempClass = 'temp-alerta';
+                    estadoClass = 'badge-alerta';
+                    estadoTexto = '🔥 DEMASIADO CALIENTE';
+                } else {
+                    tempClass = 'temp-normal';
+                    estadoClass = 'badge-normal';
+                    estadoTexto = '✅ Normal';
+                }
+                
+                return `
+                    <tr>
+                        <td>${fecha}</td>
+                        <td>${reg.cajeroNombre} (${reg.cajeroCodigo})</td>
+                        <td class="${tempClass}">${reg.temperatura}°C</td>
+                        <td><span class="badge-rango ${estadoClass}">${estadoTexto}</span></td>
+                        <td>${reg.observaciones || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function registrarTemperaturaSubmit() {
+            if (!neveraSeleccionada) {
+                mostrarNotificacion('Selecciona una nevera primero', 'error');
+                return;
+            }
+            
+            const temperatura = parseFloat(document.getElementById('temp-valor').value);
+            const observaciones = document.getElementById('temp-obs').value;
+            
+            if (isNaN(temperatura)) {
+                mostrarNotificacion('Ingresa una temperatura válida', 'error');
+                return;
+            }
+            
+            if (registrarTemperatura(neveraSeleccionada.id, temperatura, observaciones)) {
+                mostrarNotificacion(`Temperatura ${temperatura}°C registrada para "${neveraSeleccionada.nombre}"`, 'success');
+                
+                // Limpiar formulario
+                document.getElementById('temp-valor').value = '';
+                document.getElementById('temp-obs').value = '';
+                
+                // Actualizar vistas
+                cargarEstadisticasNevera();
+                cargarHistorialTemperatura();
+                cargarListaNeveras();
+            } else {
+                mostrarNotificacion('Error al registrar temperatura', 'error');
+            }
+        }
+
+        function crearNeveraSubmit(event) {
+            event.preventDefault();
+            
+            if (!esAdmin) {
+                mostrarNotificacion('Solo el administrador puede crear neveras', 'error');
+                return;
+            }
+            
+            const nombre = document.getElementById('newname').value.trim();
+            const ubicacion = document.getElementById('newubicacion').value.trim();
+            const tempMin = parseFloat(document.getElementById('newtempmin').value);
+            const tempMax = parseFloat(document.getElementById('newtempmax').value);
+            
+            if (!nombre) {
+                mostrarNotificacion('Ingresa un nombre para la nevera', 'error');
+                return;
+            }
+            
+            if (crearNevera(nombre, ubicacion, tempMin, tempMax)) {
+                mostrarNotificacion(`Nevera "${nombre}" creada correctamente`, 'success');
+                
+                // Limpiar formulario
+                document.getElementById('newname').value = '';
+                document.getElementById('newubicacion').value = '';
+                document.getElementById('newtempmin').value = '0';
+                document.getElementById('newtempmax').value = '10';
+                
+                cargarListaNeveras();
+            }
+        }
+
+        function editarNeveraPrompt(id) {
+            if (!esAdmin) return;
+            
+            const neveras = obtenerNeveras();
+            const nevera = neveras.find(n => n.id === id);
+            if (!nevera) return;
+            
+            const nuevoNombre = prompt('Editar nombre:', nevera.nombre);
+            if (nuevoNombre === null) return;
+            
+            const nuevaUbicacion = prompt('Editar ubicación:', nevera.ubicacion || '');
+            const nuevaTempMin = parseFloat(prompt('Temperatura mínima (°C):', nevera.temperaturaMin));
+            const nuevaTempMax = parseFloat(prompt('Temperatura máxima (°C):', nevera.temperaturaMax));
+            
+            if (isNaN(nuevaTempMin) || isNaN(nuevaTempMax)) {
+                mostrarNotificacion('Temperaturas inválidas', 'error');
+                return;
+            }
+            
+            if (editarNevera(id, nuevoNombre, nuevaUbicacion, nuevaTempMin, nuevaTempMax, nevera.activa)) {
+                mostrarNotificacion('Nevera actualizada', 'success');
+                if (neveraSeleccionada && neveraSeleccionada.id === id) {
+                    seleccionarNevera(id);
+                }
+                cargarListaNeveras();
+            }
+        }
+
+        function eliminarNeveraConfirm(id) {
+            if (!esAdmin) return;
+            
+            const neveras = obtenerNeveras();
+            const nevera = neveras.find(n => n.id === id);
+            
+            if (!nevera) return;
+            
+            if (confirm(`¿Eliminar la nevera "${nevera.nombre}"?\n\nSe eliminarán TODOS los registros de temperatura asociados.`)) {
+                if (eliminarNevera(id)) {
+                    mostrarNotificacion(`Nevera "${nevera.nombre}" eliminada`, 'success');
+                    
+                    if (neveraSeleccionada && neveraSeleccionada.id === id) {
+                        neveraSeleccionada = null;
+                        document.getElementById('empty-selection').style.display = 'block';
+                        document.getElementById('form-registro-container').style.display = 'none';
+                        document.getElementById('tabla-container').style.display = 'none';
+                        document.getElementById('stats-container').style.display = 'none';
+                        document.getElementById('nevera-titulo').innerHTML = '📋 Selecciona una nevera';
+                    }
+                    
+                    cargarListaNeveras();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+
+
+

@@ -1,0 +1,990 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Exhibición - Inventario</title>
+    <script>
+        window.location.replace('saladette.html');
+    </script>
+    <link rel="stylesheet" href="css/estilos.css">
+    <style>
+        /* Layout principal */
+        .exhibicion-layout {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 24px;
+        }
+        
+        @media (max-width: 968px) {
+            .exhibicion-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Panel izquierdo */
+        .panel-configuracion {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .panel-agregar {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 2px solid #86efac;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .panel-agregar h3 {
+            margin-bottom: 16px;
+            color: #166534;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .panel-config-duracion {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        /* Formulario de agregar - Grid ajustado para botón + */
+        .form-agregar-grid {
+            display: grid;
+            grid-template-columns: 1fr 70px 70px 50px;
+            gap: 12px;
+            align-items: end;
+        }
+        
+        @media (max-width: 1200px) {
+            .form-agregar-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+        }
+        
+        .form-group-agregar {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .form-group-agregar label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .form-group-agregar select,
+        .form-group-agregar input {
+            padding: 10px;
+            border: 2px solid #bbf7d0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            width: 100%;
+        }
+        
+        /* Botón solo con signo + */
+        .btn-solo-mas {
+            height: 40px;
+            width: 50px;
+            border: none;
+            border-radius: 8px;
+            background: #22c55e;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            margin-bottom: 2px;
+        }
+        
+        .btn-solo-mas:hover {
+            background: #16a34a;
+            transform: scale(1.05);
+        }
+        
+        .btn-solo-mas:active {
+            transform: scale(0.95);
+        }
+        
+        @media (max-width: 1200px) {
+            .btn-solo-mas {
+                width: 100%;
+                height: 44px;
+            }
+        }
+        
+        /* Lista de configuración de duración */
+        .lista-config {
+            margin-top: 12px;
+        }
+        
+        .item-config {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: var(--bg);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .item-config-nombre {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        
+        .item-config-stock {
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+        
+        .duracion-input {
+            width: 70px;
+            padding: 6px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        /* Panel derecho - Tabla de exhibición */
+        .panel-exhibicion {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+        
+        /* CARDS DE RESUMEN */
+        .resumen-exhibicion {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .card-resumen {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .card-resumen.activos { background: #f0fdf4; border-color: #86efac; }
+        .card-resumen.por-vencer { background: #fffbeb; border-color: #fcd34d; }
+        .card-resumen.vencidos { background: #fef2f2; border-color: #fca5a5; }
+        .card-resumen.total { background: #eff6ff; border-color: #93c5fd; }
+        
+        .resumen-numero {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .card-resumen.activos .resumen-numero { color: #059669; }
+        .card-resumen.por-vencer .resumen-numero { color: #d97706; }
+        .card-resumen.vencidos .resumen-numero { color: #dc2626; }
+        .card-resumen.total .resumen-numero { color: #2563eb; }
+        
+        .resumen-etiqueta {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        /* TABLA DE EXHIBICIÓN - NUEVO ESTILO */
+        .tabla-exhibicion-container {
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        
+        .tabla-exhibicion {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+        
+        .tabla-exhibicion thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .tabla-exhibicion th {
+            background: #f8fafc;
+            padding: 14px 12px;
+            text-align: left;
+            font-weight: 700;
+            color: #475569;
+            border-bottom: 2px solid #e2e8f0;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .tabla-exhibicion td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+        
+        .tabla-exhibicion tr:hover {
+            background: #f8fafc;
+        }
+        
+        .tabla-exhibicion tr.critico { background: #fef2f2; }
+        .tabla-exhibicion tr.advertencia { background: #fffbeb; }
+        .tabla-exhibicion tr.vencido { background: #f3f4f6; opacity: 0.7; }
+        .tabla-exhibicion tr.inactivo { background: #f9fafb; opacity: 0.6; }
+        
+        /* Celdas específicas */
+        .cell-producto {
+            font-weight: 600;
+            color: var(--text);
+        }
+        
+        .cell-categoria {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+        
+        .cell-cantidad {
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+        
+        .cell-tiempo {
+            font-family: monospace;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+        
+        .cell-tiempo.normal { color: #059669; }
+        .cell-tiempo.advertencia { color: #d97706; }
+        .cell-tiempo.critico { color: #dc2626; animation: pulse 2s infinite; }
+        .cell-tiempo.vencido { color: #6b7280; text-decoration: line-through; }
+        
+        .cell-hora {
+            font-size: 0.8rem;
+            color: #6b7280;
+            font-family: monospace;
+        }
+        
+        .cell-cajero {
+            font-size: 0.85rem;
+            color: #8b5cf6;
+            font-weight: 500;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        /* Controles solo con botón quitar */
+        .control-venta {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-vender {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            background: #fee2e2;
+            color: #dc2626;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .btn-vender:hover:not(:disabled) {
+            background: #fecaca;
+            transform: scale(1.1);
+        }
+        
+        .btn-vender:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        .cantidad-tabla {
+            min-width: 40px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        /* Estado badge en tabla */
+        .estado-tabla {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        .estado-activo { background: #d1fae5; color: #065f46; }
+        .estado-vencido { background: #fee2e2; color: #991b1b; }
+        .estado-inactivo { background: #e5e7eb; color: #374151; }
+        
+        /* Botones de acción en tabla */
+        .btn-tabla {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-desactivar-tabla {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+        
+        .btn-desactivar-tabla:hover {
+            background: #e5e7eb;
+        }
+        
+        .btn-activar-tabla {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .btn-activar-tabla:hover {
+            background: #bfdbfe;
+        }
+        
+        .selector-categoria-box {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+        }
+        
+        .selector-categoria-box label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .selector-categoria-box select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .empty-state-custom {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+        }
+        
+        .empty-icon-big {
+            font-size: 4rem;
+            margin-bottom: 16px;
+        }
+        
+        /* Badge de lote */
+        .lote-badge {
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-family: monospace;
+            margin-left: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <h1>🥐 Gestión de Exhibición</h1>
+                <div id="user-info"></div>
+            </div>
+            <nav class="main-nav" id="main-nav"></nav>
+        </header>
+
+        <main>
+            <div class="exhibicion-layout">
+                <!-- COLUMNA IZQUIERDA -->
+                <div class="panel-configuracion">
+                    <div class="selector-categoria-box">
+                        <label>📁 Seleccionar Categoría:</label>
+                        <select id="select-categoria" onchange="cambiarCategoria()">
+                            <option value="">-- Elige una categoría --</option>
+                        </select>
+                    </div>
+
+                    <!-- AGREGAR PRODUCTO - ARRIBA -->
+                    <div class="panel-agregar" id="panel-agregar" style="display: none;">
+                        <h3>➕ Agregar a Exhibición</h3>
+                        <div class="form-agregar-grid">
+                            <div class="form-group-agregar">
+                                <label>Producto</label>
+                                <select id="select-producto">
+                                    <option value="">Seleccionar...</option>
+                                </select>
+                            </div>
+                            <div class="form-group-agregar">
+                                <label>Cant.</label>
+                                <input type="number" id="input-cantidad" min="1" value="1">
+                            </div>
+                            <div class="form-group-agregar">
+                                <label>Horas</label>
+                                <input type="number" id="input-horas" min="1" value="8">
+                            </div>
+                            <button onclick="agregarProducto()" class="btn-solo-mas" title="Agregar a exhibición">
+                                +
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- CONFIGURACIÓN - ABAJO -->
+                    <div class="panel-config-duracion" id="panel-config" style="display: none;">
+                        <h4 style="margin-bottom: 16px; color: var(--text-light); font-size: 0.95rem;">
+                            ⚙️ Configurar duración por producto (horas):
+                        </h4>
+                        <div id="lista-configuracion" class="lista-config"></div>
+                    </div>
+                    
+                    <div id="empty-state-left" class="empty-state-custom" style="background: var(--card-bg); border-radius: 16px;">
+                        <div class="empty-icon-big">📂</div>
+                        <p>Selecciona una categoría para comenzar</p>
+                    </div>
+                </div>
+
+                <!-- COLUMNA DERECHA: Tabla de Exhibición -->
+                <div class="panel-exhibicion">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                        <h2>🛒 Productos en Exhibición</h2>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="limpiarVencidos()" class="btn-secondary" style="background: #fef3c7; color: #92400e; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                                🧹 Limpiar Vencidos
+                            </button>
+                            <button onclick="refrescarTodo()" class="btn-primary" style="padding: 10px 16px;">
+                                🔄 Actualizar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- CARDS DE RESUMEN -->
+                    <div class="resumen-exhibicion">
+                        <div class="card-resumen activos">
+                            <div class="resumen-numero" id="count-activos">0</div>
+                            <div class="resumen-etiqueta">Activos</div>
+                        </div>
+                        <div class="card-resumen por-vencer">
+                            <div class="resumen-numero" id="count-por-vencer">0</div>
+                            <div class="resumen-etiqueta">Por Vencer</div>
+                        </div>
+                        <div class="card-resumen vencidos">
+                            <div class="resumen-numero" id="count-vencidos">0</div>
+                            <div class="resumen-etiqueta">Vencidos</div>
+                        </div>
+                        <div class="card-resumen total">
+                            <div class="resumen-numero" id="count-total">0</div>
+                            <div class="resumen-etiqueta">Total Items</div>
+                        </div>
+                    </div>
+
+                    <!-- TABLA EN VEZ DE CARDS -->
+                    <div id="contenedor-exhibicion">
+                        <div class="empty-state-custom">
+                            <div class="empty-icon-big">🥐</div>
+                            <h3>No hay productos en exhibición</h3>
+                            <p>Usa el panel izquierdo para agregar productos</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="js/core/config.js"></script>
+    <script src="js/core/utils.js"></script>
+    <script src="js/core/storage.js"></script>
+    <script src="js/core/init.js"></script>
+    <script src="js/features/categories.js"></script>
+    <script src="js/core/session-navigation.js"></script>
+    <script src="js/features/inventory-items.js"></script>
+    <script src="js/features/auditoria.js"></script>
+    <script src="js/features/cajeros.js"></script>
+    <script src="js/features/reports-export.js"></script>
+    <script src="js/core/ui.js"></script>
+    <script src="js/features/conteos-tabs.js"></script>
+    <script src="js/features/backup.js"></script>
+    <script src="js/features/exhibicion.js"></script>
+    <script src="js/features/neveras.js"></script>
+    <script>
+        let categoriaActual = null;
+        let intervalo = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!verificarSesion()) return;
+            inicializarDatos();
+            cargarCategorias();
+            
+            intervalo = setInterval(actualizarTiempos, 1000);
+            renderizarExhibicion();
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (intervalo) clearInterval(intervalo);
+        });
+
+        function cargarCategorias() {
+            const select = document.getElementById('select-categoria');
+            const cats = obtenerCategorias();
+            select.innerHTML = '<option value="">-- Elige una categoría --</option>' +
+                cats.map(c => `<option value="${c.id}">${c.icono} ${c.nombre}</option>`).join('');
+        }
+
+        function cambiarCategoria() {
+            const select = document.getElementById('select-categoria');
+            const val = select.value;
+            
+            if (!val) {
+                document.getElementById('panel-agregar').style.display = 'none';
+                document.getElementById('panel-config').style.display = 'none';
+                document.getElementById('empty-state-left').style.display = 'block';
+                return;
+            }
+            
+            categoriaActual = val;
+            document.getElementById('panel-agregar').style.display = 'block';
+            document.getElementById('panel-config').style.display = 'block';
+            document.getElementById('empty-state-left').style.display = 'none';
+            
+            cargarSelectorProductos();
+            cargarConfiguracionDuracion();
+        }
+
+        function cargarSelectorProductos() {
+            const select = document.getElementById('select-producto');
+            const productos = obtenerDatos(categoriaActual);
+            const exhibicion = obtenerExhibicionActiva();
+            
+            if (productos.length === 0) {
+                select.innerHTML = '<option value="">No hay productos en esta categoría</option>';
+                return;
+            }
+            
+            // Contar cuántas unidades de cada producto están actualmente en exhibición
+            const unidadesEnExhibicion = {};
+            exhibicion.forEach(e => {
+                if (e.estado === 'activo') {
+                    unidadesEnExhibicion[e.productoId] = (unidadesEnExhibicion[e.productoId] || 0) + e.cantidad;
+                }
+            });
+            
+            const opciones = productos.map(p => {
+                const stockGeneral = p.cantidad;
+                const enExhibicion = unidadesEnExhibicion[p.id] || 0;
+                
+                if (enExhibicion > 0) {
+                    return `<option value="${p.id}">
+                        ${p.nombre} (En exhibición: ${enExhibicion} unidades | Stock bodega: ${stockGeneral})
+                    </option>`;
+                } else {
+                    return `<option value="${p.id}">
+                        ${p.nombre} (Stock: ${stockGeneral})
+                    </option>`;
+                }
+            });
+            
+            select.innerHTML = '<option value="">Seleccionar producto...</option>' + opciones.join('');
+        }
+
+        function cargarConfiguracionDuracion() {
+            const cont = document.getElementById('lista-configuracion');
+            const productos = obtenerDatos(categoriaActual);
+            const config = obtenerConfigDuracion(categoriaActual);
+            
+            cont.innerHTML = productos.map(p => `
+                <div class="item-config">
+                    <div>
+                        <div class="item-config-nombre">${p.nombre}</div>
+                        <div class="item-config-stock">Stock: ${p.cantidad} ${p.unidad}</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <input type="number" class="duracion-input" value="${config[p.id] || 8}" 
+                               min="1" max="72" onchange="guardarDuracion('${p.id}', this.value)">
+                        <span style="font-size: 0.8rem; color: var(--text-light);">hrs</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function guardarDuracion(productoId, horas) {
+            const config = obtenerConfigDuracion(categoriaActual);
+            config[productoId] = parseInt(horas) || 8;
+            guardarConfigDuracion(categoriaActual, config);
+            mostrarNotificacion('Duración guardada', 'success');
+        }
+
+        function agregarProducto() {
+            const selectProd = document.getElementById('select-producto');
+            const inputCant = document.getElementById('input-cantidad');
+            const inputHoras = document.getElementById('input-horas');
+            
+            const prodId = selectProd.value;
+            const cantidad = parseInt(inputCant.value) || 1;
+            const horas = parseInt(inputHoras.value) || 8;
+            
+            if (!prodId) {
+                mostrarNotificacion('Selecciona un producto', 'error');
+                return;
+            }
+            
+            const productos = obtenerDatos(categoriaActual);
+            const prod = productos.find(p => p.id === prodId);
+            
+            if (!prod || prod.cantidad < cantidad) {
+                mostrarNotificacion('Stock insuficiente', 'error');
+                return;
+            }
+            
+            // Descontar del inventario
+            prod.cantidad -= cantidad;
+            guardarDatos(categoriaActual, productos);
+            
+            // Agregar a exhibición (SIEMPRE NUEVA FILA)
+            agregarAExhibicion(categoriaActual, prodId, cantidad, horas);
+            
+            // Limpiar
+            selectProd.value = '';
+            inputCant.value = '1';
+            inputHoras.value = '8';
+            
+            cargarSelectorProductos();
+            cargarConfiguracionDuracion();
+            renderizarExhibicion();
+            
+            mostrarNotificacion(`✅ ${cantidad} unidad(es) de "${prod.nombre}" agregadas a exhibición`, 'success');
+        }
+
+        function obtenerNombreCategoria(id) {
+            const cats = obtenerCategorias();
+            const cat = cats.find(c => c.id === id);
+            return cat ? cat.nombre : id;
+        }
+
+        // NUEVA FUNCIÓN: agregar a exhibición SIEMPRE como nueva fila
+        function agregarAExhibicion(categoriaId, productoId, cantidad, duracionHoras) {
+            const productos = obtenerDatos(categoriaId);
+            const producto = productos.find(p => p.id === productoId);
+            
+            if (!producto) return false;
+            
+            const exhibicion = obtenerExhibicionActiva();
+            const ahora = new Date();
+            const vencimiento = new Date(ahora.getTime() + (duracionHoras * 60 * 60 * 1000));
+            
+            // 🔥 NUEVO COMPORTAMIENTO: Siempre crear nueva fila, no actualizar existente
+            const nuevoItem = {
+                id: `exh-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+                categoriaId: categoriaId,
+                productoId: productoId,
+                nombre: producto.nombre,
+                cantidadInicial: cantidad,
+                cantidad: cantidad,
+                duracionHoras: duracionHoras,
+                fechaHoraInicio: ahora.toISOString(),
+                fechaHoraVencimiento: vencimiento.toISOString(),
+                estado: 'activo',
+                vendidos: 0,
+                cajeroNombre: cajeroActual ? cajeroActual.nombre : 'Desconocido',
+                cajeroCodigo: cajeroActual ? cajeroActual.codigo : '???'
+            };
+            
+            exhibicion.push(nuevoItem);
+            
+            guardarExhibicionActiva(exhibicion);
+            
+            // Registrar en auditoría
+            registrarAuditoria({
+                cajeroId: cajeroActual.id,
+                cajeroNombre: cajeroActual.nombre,
+                cajeroCodigo: cajeroActual.codigo,
+                tipo: 'exhibicion_agregado',
+                categoria: categoriaId,
+                itemNombre: producto.nombre,
+                cantidad: cantidad,
+                stockAnterior: 0,
+                stockNuevo: cantidad
+            });
+            
+            return true;
+        }
+
+        // RENDERIZAR COMO TABLA CON NUEVAS COLUMNAS
+        function renderizarExhibicion() {
+            const cont = document.getElementById('contenedor-exhibicion');
+            const exhibicion = obtenerExhibicionActiva();
+            
+            // Calcular stats
+            const activos = exhibicion.filter(e => e.estado === 'activo');
+            const vencidos = exhibicion.filter(e => e.estado === 'vencido');
+            const porVencer = activos.filter(e => {
+                const t = calcularTiempoRestante(e.fechaHoraVencimiento);
+                return t.clase === 'critico' || t.clase === 'advertencia';
+            });
+            
+            // Actualizar contadores
+            document.getElementById('count-activos').textContent = activos.length;
+            document.getElementById('count-por-vencer').textContent = porVencer.length;
+            document.getElementById('count-vencidos').textContent = vencidos.length;
+            document.getElementById('count-total').textContent = exhibicion.reduce((s, e) => s + e.cantidad, 0);
+            
+            if (exhibicion.length === 0) {
+                cont.innerHTML = `
+                    <div class="empty-state-custom">
+                        <div class="empty-icon-big">🥐</div>
+                        <h3>No hay productos en exhibición</h3>
+                        <p>Usa el panel izquierdo para agregar productos</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Ordenar: activos primero, luego por tiempo
+            const ordenada = [...exhibicion].sort((a, b) => {
+                if (a.estado !== b.estado) return a.estado === 'activo' ? -1 : 1;
+                return new Date(a.fechaHoraVencimiento) - new Date(b.fechaHoraVencimiento);
+            });
+            
+            let html = `
+                <div class="tabla-exhibicion-container">
+                    <table class="tabla-exhibicion">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Categoría</th>
+                                <th style="text-align: center;">Cantidad</th>
+                                <th style="text-align: center;">Vendidos</th>
+                                <th style="text-align: center;">Tiempo Restante</th>
+                                <th style="text-align: center;">Hora Agregado</th>
+                                <th style="text-align: center;">Cajero</th>
+                                <th style="text-align: center;">Estado</th>
+                                <th style="text-align: center;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            ordenada.forEach(item => {
+                const tiempo = calcularTiempoRestante(item.fechaHoraVencimiento);
+                const claseFila = item.estado === 'vencido' ? 'vencido' : 
+                                 item.estado === 'inactivo' ? 'inactivo' : tiempo.clase;
+                
+                const horaAgregado = new Date(item.fechaHoraInicio).toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                
+                const fechaAgregado = new Date(item.fechaHoraInicio).toLocaleDateString('es-ES');
+                const horaCompleta = `${fechaAgregado} ${horaAgregado}`;
+                
+                const cajeroInfo = item.cajeroNombre ? `${item.cajeroNombre} (${item.cajeroCodigo || '?'})` : 'Desconocido';
+                
+                // Número de lote (últimos 6 caracteres del ID)
+                const loteNum = item.id.slice(-6);
+                
+                html += `
+                    <tr class="${claseFila}" id="fila-${item.id}">
+                        <td class="cell-producto">
+                            ${item.nombre}
+                        </td>
+                        <td class="cell-categoria">${obtenerNombreCategoria(item.categoriaId)}</td>
+                        <td class="cell-cantidad">${item.cantidad}</td>
+                        <td class="cell-cantidad" style="color: #6b7280;">${item.vendidos || 0}</td>
+                        <td class="cell-tiempo ${tiempo.clase}" id="tiempo-celda-${item.id}">
+                            ${item.estado === 'activo' ? tiempo.texto : '-'}
+                        </td>
+                        <td class="cell-hora">
+                            ${horaCompleta}
+                        </td>
+                        <td class="cell-cajero">
+                            👤 ${cajeroInfo}
+                        </td>
+                        <td style="text-align: center;">
+                            <span class="estado-tabla estado-${item.estado}">${item.estado}</span>
+                        </td>
+                        <td style="text-align: center;">
+                            ${item.estado === 'activo' ? `
+                                <div class="control-venta">
+                                    <span class="cantidad-tabla">${item.cantidad}</span>
+                                    <button class="btn-vender" onclick="venderProducto('${item.id}')" ${item.cantidad <= 0 ? 'disabled' : ''} title="Vender (-1)">
+                                        −
+                                    </button>
+                                    <button class="btn-desactivar-tabla" onclick="cambiarEstado('${item.id}', 'inactivo')" style="margin-left: 8px;">
+                                        Desactivar
+                                    </button>
+                                </div>
+                            ` : `
+                                <button class="btn-activar-tabla" onclick="reactivar('${item.id}')">
+                                    Reactivar
+                                </button>
+                            `}
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `</tbody></table></div>`;
+            cont.innerHTML = html;
+        }
+
+        function actualizarTiempos() {
+            limpiarExhibicionVencidos();
+            const exhibicion = obtenerExhibicionActiva();
+            
+            exhibicion.forEach(item => {
+                if (item.estado === 'activo') {
+                    const tiempo = calcularTiempoRestante(item.fechaHoraVencimiento);
+                    const el = document.getElementById(`tiempo-celda-${item.id}`);
+                    
+                    if (el) {
+                        el.textContent = tiempo.texto;
+                        el.className = `cell-tiempo ${tiempo.clase}`;
+                        
+                        // Actualizar clase de la fila
+                        const fila = document.getElementById(`fila-${item.id}`);
+                        if (fila) {
+                            fila.classList.remove('critico', 'advertencia', 'normal');
+                            fila.classList.add(tiempo.clase);
+                        }
+                    }
+                }
+            });
+            
+            // Cada 10 segundos recalcular todo
+            if (new Date().getSeconds() % 10 === 0) {
+                renderizarExhibicion();
+            }
+        }
+
+        function venderProducto(id) {
+            const exhibicion = obtenerExhibicionActiva();
+            const item = exhibicion.find(e => e.id === id);
+            
+            if (!item || item.estado !== 'activo' || item.cantidad <= 0) return;
+            
+            // Solo restar (vender)
+            item.cantidad--;
+            item.vendidos = (item.vendidos || 0) + 1;
+            
+            // Si llega a 0, desactivar automáticamente
+            if (item.cantidad <= 0) {
+                item.estado = 'inactivo';
+                item.cantidad = 0;
+            }
+            
+            guardarExhibicionActiva(exhibicion);
+            renderizarExhibicion();
+            
+            // Registrar en auditoría
+            registrarAuditoria({
+                cajeroId: cajeroActual.id,
+                cajeroNombre: cajeroActual.nombre,
+                cajeroCodigo: cajeroActual.codigo,
+                tipo: 'venta_exhibicion',
+                categoria: item.categoriaId,
+                itemNombre: `${item.nombre} (Lote ${item.id.slice(-6)})`,
+                cantidad: 1,
+                stockAnterior: item.cantidad + 1,
+                stockNuevo: item.cantidad
+            });
+            
+            mostrarNotificacion(`Vendida 1 unidad de "${item.nombre}"`, 'success');
+        }
+
+        function cambiarEstado(id, estado) {
+            const exhibicion = obtenerExhibicionActiva();
+            const item = exhibicion.find(e => e.id === id);
+            if (item) {
+                item.estado = estado;
+                guardarExhibicionActiva(exhibicion);
+                renderizarExhibicion();
+                mostrarNotificacion(`Producto ${estado === 'inactivo' ? 'desactivado' : 'activado'}`, 'success');
+            }
+        }
+
+        function reactivar(id) {
+            const exhibicion = obtenerExhibicionActiva();
+            const item = exhibicion.find(e => e.id === id);
+            if (!item) return;
+            
+            const ahora = new Date();
+            const vencimiento = new Date(ahora.getTime() + (item.duracionHoras * 60 * 60 * 1000));
+            
+            item.fechaHoraInicio = ahora.toISOString();
+            item.fechaHoraVencimiento = vencimiento.toISOString();
+            item.estado = 'activo';
+            
+            guardarExhibicionActiva(exhibicion);
+            renderizarExhibicion();
+            mostrarNotificacion('Producto reactivado', 'success');
+        }
+
+        function limpiarVencidos() {
+            const exhibicion = obtenerExhibicionActiva();
+            const vencidos = exhibicion.filter(e => e.estado === 'vencido');
+            if (vencidos.length === 0) {
+                mostrarNotificacion('No hay productos vencidos', 'info');
+                return;
+            }
+            
+            if (!confirm(`¿Eliminar ${vencidos.length} productos vencidos?`)) return;
+            
+            const nueva = exhibicion.filter(e => e.estado !== 'vencido');
+            guardarExhibicionActiva(nueva);
+            renderizarExhibicion();
+            mostrarNotificacion('Vencidos eliminados', 'success');
+        }
+
+        function refrescarTodo() {
+            if (categoriaActual) {
+                cargarSelectorProductos();
+                cargarConfiguracionDuracion();
+            }
+            renderizarExhibicion();
+            mostrarNotificacion('Actualizado', 'success');
+        }
+    </script>
+</body>
+</html>
+
+
+

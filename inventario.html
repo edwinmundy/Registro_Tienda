@@ -1,0 +1,157 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario General</title>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <h1>📊 Inventario General</h1>
+                <div id="user-info"></div>
+            </div>
+            <nav class="main-nav" id="main-nav">
+                <!-- Se carga dinámicamente desde app.js -->
+            </nav>
+        </header>
+
+        <main>
+            <div class="inventory-tabs" id="inventory-tabs">
+                <!-- Se genera dinámicamente desde app.js -->
+            </div>
+
+            <div class="table-container">
+                <table class="inventory-table">
+                    <thead>
+                        <tr>
+                            <th>Categoría</th>
+                            <th>ID</th>  <!-- NUEVA COLUMNA -->
+                            <th>Item</th>
+                            <th>Cantidad</th>
+                            <th>Unidad</th>
+                            <th>Stock Mínimo</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-inventario">
+                        <!-- Datos se cargan dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="export-section" style="margin-top: 20px;">
+                <button onclick="exportarExcel()" class="btn-export">📥 Exportar a Excel</button>
+                <button onclick="limpiarTodoInventario()" class="btn-delete" style="background: var(--danger); color: white;">🗑️ Limpiar Historial</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="js/core/config.js"></script>
+    <script src="js/core/utils.js"></script>
+    <script src="js/core/storage.js"></script>
+    <script src="js/core/init.js"></script>
+    <script src="js/features/categories.js"></script>
+    <script src="js/core/session-navigation.js"></script>
+    <script src="js/features/inventory-items.js"></script>
+    <script src="js/features/auditoria.js"></script>
+    <script src="js/features/cajeros.js"></script>
+    <script src="js/features/reports-export.js"></script>
+    <script src="js/core/ui.js"></script>
+    <script src="js/features/conteos-tabs.js"></script>
+    <script src="js/features/backup.js"></script>
+    <script src="js/features/exhibicion.js"></script>
+    <script src="js/features/neveras.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!verificarSesion()) return;
+        inicializarDatos();
+        
+        // Generar pestañas dinámicas
+        generarPestanasInventario();
+        
+        // Cargar pestaña inicial
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabInicial = urlParams.get('tab') || 'todo';
+        cargarInventarioGeneral(tabInicial);
+    });
+
+    function limpiarTodoInventario() {
+        if (!verificarSesion()) return;
+        
+        // Solo admin puede limpiar todo el inventario
+        const esAdmin = esAdminActual();
+        if (!esAdmin) {
+            mostrarNotificacion('Solo el administrador puede limpiar el inventario', 'error');
+            return;
+        }
+        
+        if (!confirm('⚠️ ¿ESTÁS SEGURO?\n\nEsto eliminará:\n✓ TODAS las categorías\n✓ TODOS los items\n✓ TODO el historial de auditoría\n✓ TODOS los conteos de cigarrillos\n✓ TODO el historial de conteos\n\nEsta acción NO se puede deshacer.\n\n¿Deseas continuar?')) {
+            return;
+        }
+        
+        // Segunda confirmación por seguridad
+        const confirmacion = prompt('Escribe "ELIMINAR" para confirmar:');
+        if (confirmacion !== 'ELIMINAR') {
+            mostrarNotificacion('Operación cancelada', 'warning');
+            return;
+        }
+        
+        // Obtener lista de todas las claves de localStorage relacionadas con el inventario
+        const keysToRemove = [];
+        const categorias = obtenerCategorias();
+        
+        // Claves de categorías
+        categorias.forEach(cat => {
+            keysToRemove.push(`inventario_${cat.id}`);
+        });
+        
+        // Otras claves del sistema
+        keysToRemove.push(
+            'inventario_categorias',
+            'inventario_auditoria',
+            'conteo_en_progreso',
+            'cigarrillos_sistema',
+            'historial_conteos'
+        );
+        
+        // Eliminar todas las claves
+        keysToRemove.forEach(key => {
+            localStorage.removeItem(key);
+        });
+        
+        // Registrar en auditoría antes de borrarla (último registro)
+        const registroFinal = {
+            id: `aud-${Date.now()}`,
+            fecha: new Date().toISOString(),
+            cajeroId: cajeroActual.id,
+            cajeroNombre: cajeroActual.nombre,
+            cajeroCodigo: cajeroActual.codigo,
+            tipo: 'limpieza_total',
+            categoria: 'sistema',
+            itemNombre: 'Limpieza completa del inventario',
+            cantidad: 0,
+            stockAnterior: categorias.length,
+            stockNuevo: 0
+        };
+        
+        // Guardar solo este registro como nueva auditoría
+        localStorage.setItem('inventario_auditoria', JSON.stringify([registroFinal]));
+        
+        mostrarNotificacion('🗑️ Inventario completamente limpiado. Recargando...', 'success');
+        
+        // Recargar la página después de 1.5 segundos
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
+    }
+    </script>
+</body>
+</html>
+
+
+

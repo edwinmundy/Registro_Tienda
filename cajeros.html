@@ -1,0 +1,782 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Gestión de Cajeros</title>
+
+<link rel="stylesheet" href="css/estilos.css">
+
+<style>
+
+.admin-badge{
+background:var(--primary);
+color:white;
+padding:4px 12px;
+border-radius:20px;
+font-size:0.75rem;
+font-weight:bold;
+text-transform:uppercase;
+}
+
+.cajero-admin{
+border-left:4px solid var(--primary);
+background:linear-gradient(to right,var(--primary-soft),var(--card-bg));
+position:relative;
+}
+
+.cajero-admin::after{
+content:'🔐 ADMIN';
+position:absolute;
+top:8px;
+right:8px;
+font-size:0.7rem;
+color:var(--primary);
+font-weight:bold;
+}
+
+/* Sección de Importación/Exportación de Cajeros */
+.import-section-cajeros {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+    max-height: 70px;
+    overflow: hidden;
+    transition: max-height 0.5s ease, box-shadow 0.3s ease;
+    position: relative;
+    cursor: pointer;
+}
+
+.import-section-cajeros:hover {
+    max-height: 400px;
+    box-shadow: var(--shadow-lg);
+    cursor: default;
+}
+
+.import-section-cajeros::before {
+    content: '▼ Expandir';
+    position: absolute;
+    top: 28px;
+    right: 24px;
+    font-size: 0.85rem;
+    color: var(--primary);
+    font-weight: 600;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.import-section-cajeros:hover::before {
+    opacity: 0;
+}
+
+.import-section-cajeros h3 {
+    margin: 0 0 20px 0;
+    padding-right: 80px;
+    pointer-events: none;
+}
+
+.import-tabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 12px;
+}
+
+.import-tab {
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-light);
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.import-tab.active {
+    background: var(--primary);
+    color: white;
+}
+
+.import-content {
+    display: none;
+}
+
+.import-content.active {
+    display: block;
+}
+
+.file-drop-zone {
+    border: 3px dashed var(--border);
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.file-drop-zone:hover {
+    border-color: var(--primary);
+    background: var(--bg);
+}
+
+.file-drop-zone.dragover {
+    border-color: var(--success);
+    background: var(--success-soft);
+}
+
+.paste-zone {
+    width: 100%;
+    min-height: 150px;
+    padding: 16px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 0.9rem;
+    resize: vertical;
+}
+
+</style>
+</head>
+
+
+<body>
+
+<div class="container">
+
+<header>
+
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+<h1>👤 Gestión de Cajeros</h1>
+<div id="user-info"></div>
+</div>
+
+<nav class="main-nav" id="main-nav">
+</nav>
+
+</header>
+
+<main>
+
+<!-- SECCIÓN DE IMPORTACIÓN/EXPORTACIÓN (SOLO ADMIN) -->
+<div id="import-section-cajeros" class="import-section-cajeros" style="display: none;">
+    <h3>📥 Importar / 📤 Exportar Datos de Cajeros</h3>
+    
+    <div class="import-tabs">
+        <button class="import-tab active" onclick="event.stopPropagation(); switchImportTabCajeros('file')">📁 Importar Excel</button>
+        <button class="import-tab" onclick="event.stopPropagation(); switchImportTabCajeros('paste')">📋 Pegar Datos</button>
+        <button class="import-tab" onclick="event.stopPropagation(); switchImportTabCajeros('export')">📤 Exportar</button>
+    </div>
+
+    <!-- Importar por archivo -->
+    <div id="tab-file-cajeros" class="import-content active">
+        <div class="file-drop-zone" id="drop-zone-cajeros" onclick="event.stopPropagation(); document.getElementById('file-input-cajeros').click()">
+            <div style="font-size: 3rem; margin-bottom: 12px;">📁</div>
+            <p style="font-weight: 600; margin-bottom: 8px;">Arrastra archivo Excel aquí</p>
+            <p style="color: var(--text-light); font-size: 0.9rem;">o haz clic para seleccionar</p>
+            <input type="file" id="file-input-cajeros" accept=".xlsx,.xls" style="display: none;">
+        </div>
+        <p style="margin-top: 12px; color: var(--text-light); font-size: 0.85rem;">
+            💡 Formato esperado: Nombre | RUT | Turno | Código | Contraseña | Cargo
+        </p>
+    </div>
+
+    <!-- Importar por pegado -->
+    <div id="tab-paste-cajeros" class="import-content">
+        <textarea id="paste-zone-cajeros" class="paste-zone" placeholder="Pega aquí los datos de cajeros...&#10;&#10;Formato:&#10;Nombre | RUT | Turno | Código | Contraseña | Cargo&#10;Juan Pérez | 12.345.678-9 | T1 | JP001 | 1234 | Cajero Multifuncional"></textarea>
+        <button onclick="event.stopPropagation(); procesarDatosPegadosCajeros()" class="btn-primary" style="margin-top: 12px; width: 100%;">
+            📋 Procesar Datos
+        </button>
+    </div>
+
+    <!-- Exportar -->
+    <div id="tab-export-cajeros" class="import-content">
+        <div style="text-align: center; padding: 30px;">
+            <div style="font-size: 3rem; margin-bottom: 12px;">📤</div>
+            <p style="font-weight: 600; margin-bottom: 16px;">Exportar lista de cajeros actual</p>
+            <button onclick="event.stopPropagation(); exportarCajerosExcel()" class="btn-export" style="padding: 12px 32px;">
+                📥 Descargar Excel
+            </button>
+        </div>
+    </div>
+        <!-- SECCIÓN DE ADMIN (SOLO ADMIN) -->
+    <div id="admin-section" class="admin-backup-section" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 2px dashed var(--border);">
+        <h4 style="margin-bottom: 16px; color: var(--danger); display: flex; align-items: center; gap: 8px;">
+            ⚠️ Zona de Administración
+        </h4>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+            <!-- Exportar Backup -->
+            <button onclick="event.stopPropagation(); exportarLocalStorageCompleto()" class="btn-export" style="background: #3b82f6; color: white; padding: 12px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                💾 Guardar Todo (Backup)
+            </button>
+            
+            <!-- Importar Backup -->
+            <div style="position: relative;">
+                <input type="file" id="input-restore-backup" accept=".json" style="display: none;" onchange="importarLocalStorageCompleto(event)">
+                <button onclick="event.stopPropagation(); document.getElementById('input-restore-backup').click()" class="btn-export" style="background: #8b5cf6; color: white; padding: 12px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    📂 Cargar Backup
+                </button>
+            </div>
+            
+            <!-- Limpiar Todo -->
+            <button onclick="event.stopPropagation(); limpiarLocalStorageCompleto()" class="btn-delete" style="background: var(--danger); color: white; padding: 12px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                🗑️ Borrar Todo
+            </button>
+        </div>
+        
+        <p style="margin-top: 12px; font-size: 0.85rem; color: var(--text-light);">
+            💡 <strong>Guardar Todo:</strong> Exporta todos los datos a un archivo JSON.<br>
+            💡 <strong>Cargar Backup:</strong> Restaura datos desde un archivo JSON previamente guardado.<br>
+            ⚠️ <strong>Borrar Todo:</strong> Elimina permanentemente todos los datos. Requiere confirmación.
+        </p>
+    </div>
+</div>
+
+<div class="two-column-layout">
+
+<!-- FORMULARIO -->
+<div class="form-section">
+
+<div class="card">
+
+<h2 id="form-cajero-titulo">Nuevo Cajero</h2>
+
+<form
+id="form-cajero"
+onsubmit="guardarCajero(event)"
+autocomplete="off"
+autocorrect="off"
+autocapitalize="off"
+spellcheck="false"
+>
+
+<!-- Campos falsos para bloquear autocompletar -->
+<input type="text" style="display:none">
+<input type="password" style="display:none">
+
+<input type="hidden" id="cajero-id">
+
+<div class="form-group">
+
+<label>Nombre Completo:</label>
+
+<input
+type="text"
+id="cajero-nombre"
+required
+placeholder="Ej: Juan Pérez"
+autocomplete="off"
+readonly
+onfocus="this.removeAttribute('readonly');"
+>
+
+</div>
+
+
+<div class="form-group">
+
+<label>RUT:</label>
+
+<input
+type="text"
+id="cajero-rut"
+required
+placeholder="12.345.678-9"
+pattern="[0-9]{1,2}\.[0-9]{3}\.[0-9]{3}-[0-9kK]{1}"
+autocomplete="off"
+readonly
+onfocus="this.removeAttribute('readonly');"
+>
+
+</div>
+
+
+<div class="form-group">
+
+<label>Turno:</label>
+
+<select
+id="cajero-turno"
+required
+autocomplete="off"
+>
+
+<option value="T1">T1</option>
+<option value="T2">T2</option>
+<option value="T3">T3</option>
+<option value="ADMIN">ADMIN</option>
+<option value="PT">PT</option>
+<option value="APOYO">APOYO</option>
+
+</select>
+
+</div>
+
+
+<div class="form-group">
+
+<label>Código de Cajero:</label>
+
+<input
+type="text"
+id="cajero-codigo"
+required
+placeholder="Utilice su mismo código de caja"
+autocomplete="off"
+readonly
+onfocus="this.removeAttribute('readonly');"
+>
+
+</div>
+
+
+<div class="form-group">
+
+<label>Contraseña:</label>
+
+<input
+type="password"
+id="cajero-password"
+placeholder="Ingrese su clave de caja"
+autocomplete="new-password"
+readonly
+onfocus="this.removeAttribute('readonly');"
+>
+
+</div>
+
+
+<div class="form-group">
+
+<label>Cargo:</label>
+
+<select
+id="cajero-cargo"
+required
+autocomplete="off"
+>
+
+<option value="Cajero Multifuncional">Cajero Multifuncional</option>
+<option value="Cajero de Operaciones">Cajero de Operaciones</option>
+<option value="Cajero de Procesos">Cajero de Procesos</option>
+<option value="Encargado">Encargado</option>
+<option value="Corporativo">Corporativo</option>
+
+</select>
+
+</div>
+
+
+<div class="form-actions">
+
+<button type="submit" class="btn-primary">
+💾 Guardar Cajero
+</button>
+
+<button
+type="button"
+onclick="limpiarFormularioCajero()"
+class="btn-secondary"
+>
+Limpiar
+</button>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+
+<!-- LISTA -->
+<div class="list-section">
+
+<div class="card">
+
+<div class="list-header">
+
+<h2>Lista de Cajeros</h2>
+<span class="badge" id="contador-cajeros">0 activos</span>
+
+</div>
+
+
+<div class="search-box">
+
+<input
+type="text"
+id="buscar-cajero"
+placeholder="🔍 Buscar por nombre, código o cargo..."
+onkeyup="filtrarCajeros()"
+autocomplete="off"
+readonly
+onfocus="this.removeAttribute('readonly');"
+>
+
+</div>
+
+
+<div
+id="debug-info"
+style="font-size:0.8rem;color:var(--text-light);margin-bottom:10px;padding:8px;background:var(--muted-control-bg);border-radius:4px;display:none;"
+>
+</div>
+
+
+<div class="cajeros-list" id="lista-cajeros">
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</main>
+
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="js/core/config.js"></script>
+<script src="js/core/utils.js"></script>
+<script src="js/core/storage.js"></script>
+<script src="js/core/init.js"></script>
+<script src="js/features/categories.js"></script>
+<script src="js/core/session-navigation.js"></script>
+<script src="js/features/inventory-items.js"></script>
+<script src="js/features/auditoria.js"></script>
+<script src="js/features/cajeros.js"></script>
+<script src="js/features/reports-export.js"></script>
+<script src="js/core/ui.js"></script>
+<script src="js/features/conteos-tabs.js"></script>
+<script src="js/features/backup.js"></script>
+<script src="js/features/exhibicion.js"></script>
+<script src="js/features/neveras.js"></script>
+<script>
+    // Variables para importación de cajeros
+    let cajerosImportados = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // 1. Inicializar datos PRIMERO (sin verificar sesión)
+        if (!localStorage.getItem('inventario_cajeros')) {
+            inicializarDatos();
+        } else {
+            // Solo actualizar navegación si ya existen datos
+            actualizarNavegacion();
+        }
+        
+        // 2. Verificar sesión DESPUÉS
+        if (!verificarSesion()) return;
+        
+        // 3. Configurar interfaz según permisos
+        configurarInterfazCajeros();
+        
+        // 4. Cargar datos de la página
+        cargarCajeros();
+        
+        // 5. Mostrar usuario activo
+        mostrarUsuarioActual();
+    });
+
+
+    // Configurar interfaz según permisos
+function configurarInterfazCajeros() {
+    const esAdmin = esAdminActual();
+    const importSection = document.getElementById('import-section-cajeros');
+    const adminSection = document.getElementById('admin-section');
+    
+    // Solo admin ve la sección de importación/exportación
+    if (esAdmin && importSection) {
+        importSection.style.display = 'block';
+        configurarEventosImportacionCajeros();
+    }
+    
+    // Mostrar sección de admin solo para admin
+    if (esAdmin && adminSection) {
+        adminSection.style.display = 'block';
+    }
+    
+    // Configurar permisos en la lista de cajeros
+    if (!esAdmin) {
+        // Ocultar botones de editar/eliminar para cajeros normales
+        document.querySelectorAll('.cajero-actions').forEach(el => {
+            el.style.display = 'none';
+        });
+    }
+}
+
+    function configurarEventosImportacionCajeros() {
+        const dropZone = document.getElementById('drop-zone-cajeros');
+        const fileInput = document.getElementById('file-input-cajeros');
+
+        if (!dropZone || !fileInput) return;
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+        });
+
+        dropZone.addEventListener('drop', handleDropCajeros, false);
+        fileInput.addEventListener('change', handleFilesCajeros, false);
+    }
+
+    function switchImportTabCajeros(tab) {
+        document.querySelectorAll('#import-section-cajeros .import-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('#import-section-cajeros .import-content').forEach(c => c.classList.remove('active'));
+
+        event.target.classList.add('active');
+        document.getElementById(`tab-${tab}-cajeros`).classList.add('active');
+    }
+
+    function handleDropCajeros(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFilesCajeros({ target: { files: files } });
+    }
+
+    function handleFilesCajeros(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+            procesarDatosExcelCajeros(jsonData);
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function procesarDatosExcelCajeros(data) {
+        // Ignorar primera fila (headers), datos desde fila 2
+        const filasValidas = data.slice(1);
+        cajerosImportados = [];
+        
+        filasValidas.forEach((fila, index) => {
+            if (!fila || fila.length < 5) return;
+            
+            const nombre = String(fila[0] || '').trim();
+            const rut = String(fila[1] || '').trim();
+            const turno = String(fila[2] || 'T1').trim();
+            const codigo = String(fila[3] || '').trim().toUpperCase();
+            const password = String(fila[4] || '').trim();
+            const cargo = String(fila[5] || 'Cajero Multifuncional').trim();
+            
+            if (nombre && codigo && password) {
+                // Validar que el código no sea ADMIN (reservado)
+                if (codigo === 'ADMIN') return;
+                
+                // Validar contraseña numérica
+                if (!/^\d+$/.test(password)) return;
+                
+                cajerosImportados.push({
+                    id: `caj-${Date.now()}-${index}`,
+                    nombre: nombre,
+                    rut: rut || '0.000.000-0',
+                    turno: turno,
+                    codigo: codigo,
+                    password: password,
+                    cargo: cargo,
+                    activo: true
+                });
+            }
+        });
+        
+        if (cajerosImportados.length === 0) {
+            mostrarNotificacion('No se encontraron cajeros válidos en el archivo', 'error');
+            return;
+        }
+        
+        // Confirmar importación
+        if (confirm(`¿Importar ${cajerosImportados.length} cajeros?\n\n⚠️ Esto agregará los cajeros a la lista existente.`)) {
+            importarCajeros();
+        }
+    }
+
+    function procesarDatosPegadosCajeros() {
+        const texto = document.getElementById('paste-zone-cajeros').value.trim();
+        if (!texto) {
+            mostrarNotificacion('No hay datos para procesar', 'error');
+            return;
+        }
+
+        const lineas = texto.split('\n');
+        cajerosImportados = [];
+        
+        // Detectar si hay encabezado
+        let inicio = 0;
+        if (lineas[0].toLowerCase().includes('nombre') || lineas[0].toLowerCase().includes('código')) {
+            inicio = 1;
+        }
+
+        for (let i = inicio; i < lineas.length; i++) {
+            const linea = lineas[i].trim();
+            if (!linea) continue;
+
+            // Separar por tabulaciones, punto y coma, o pipe |
+            const columnas = linea.split(/[\t;|]+/).map(c => c.trim());
+            
+            if (columnas.length >= 4) {
+                const nombre = columnas[0];
+                const rut = columnas[1] || '0.000.000-0';
+                const turno = columnas[2] || 'T1';
+                const codigo = columnas[3].toUpperCase();
+                const password = columnas[4] || '0000';
+                const cargo = columnas[5] || 'Cajero Multifuncional';
+                
+                if (nombre && codigo && codigo !== 'ADMIN' && /^\d+$/.test(password)) {
+                    cajerosImportados.push({
+                        id: `caj-${Date.now()}-${i}`,
+                        nombre: nombre,
+                        rut: rut,
+                        turno: turno,
+                        codigo: codigo,
+                        password: password,
+                        cargo: cargo,
+                        activo: true
+                    });
+                }
+            }
+        }
+        
+        if (cajerosImportados.length === 0) {
+            mostrarNotificacion('No se pudieron procesar los datos. Verifica el formato.', 'error');
+            return;
+        }
+        
+        if (confirm(`¿Importar ${cajerosImportados.length} cajeros?\n\n⚠️ Esto agregará los cajeros a la lista existente.`)) {
+            importarCajeros();
+        }
+        
+        document.getElementById('paste-zone-cajeros').value = '';
+    }
+
+    function importarCajeros() {
+        let cajerosActuales = obtenerDatos('cajeros');
+        let agregados = 0;
+        let duplicados = 0;
+        
+        cajerosImportados.forEach(nuevo => {
+            // Verificar que no exista código duplicado
+            const existe = cajerosActuales.find(c => c.codigo === nuevo.codigo);
+            if (existe) {
+                duplicados++;
+            } else {
+                cajerosActuales.push(nuevo);
+                agregados++;
+            }
+        });
+        
+        guardarDatos('cajeros', cajerosActuales);
+        cargarCajeros();
+        
+        let mensaje = `✅ ${agregados} cajeros importados`;
+        if (duplicados > 0) {
+            mensaje += ` • ${duplicados} omitidos (códigos duplicados)`;
+        }
+        
+        mostrarNotificacion(mensaje, 'success');
+        
+        // Registrar en auditoría
+        registrarAuditoria({
+            cajeroId: cajeroActual.id,
+            cajeroNombre: cajeroActual.nombre,
+            cajeroCodigo: cajeroActual.codigo,
+            tipo: 'importacion_cajeros',
+            categoria: 'sistema',
+            itemNombre: `Importación de ${agregados} cajeros`,
+            cantidad: agregados,
+            stockAnterior: cajerosActuales.length - agregados,
+            stockNuevo: cajerosActuales.length
+        });
+    }
+
+    function exportarCajerosExcel() {
+        const cajeros = obtenerDatos('cajeros');
+        
+        // Filtrar el admin del export (por seguridad)
+        const cajerosExportar = cajeros.filter(c => c.codigo !== 'ADMIN');
+        
+        if (cajerosExportar.length === 0) {
+            mostrarNotificacion('No hay cajeros para exportar (solo existe el admin)', 'warning');
+            return;
+        }
+        
+        const datos = cajerosExportar.map(c => ({
+            'Nombre': c.nombre,
+            'RUT': c.rut,
+            'Turno': c.turno,
+            'Código': c.codigo,
+            'Contraseña': c.password,
+            'Cargo': c.cargo,
+            'Activo': c.activo ? 'Sí' : 'No'
+        }));
+        
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(datos);
+        
+        ws['!cols'] = [
+            { wch: 25 }, { wch: 15 }, { wch: 10 }, 
+            { wch: 12 }, { wch: 12 }, { wch: 20 }, { wch: 10 }
+        ];
+        
+        XLSX.utils.book_append_sheet(wb, ws, 'Cajeros');
+        
+        // Agregar hoja de instrucciones
+        const instrucciones = [
+            ['INSTRUCCIONES DE IMPORTACIÓN'],
+            [''],
+            ['1. No modifique la estructura de columnas'],
+            ['2. El código ADMIN está reservado y no se importará'],
+            ['3. Las contraseñas deben ser solo números (1-6 dígitos)'],
+            ['4. Los turnos válidos son: T1, T2, T3, PT, APOYO'],
+            ['5. Los cargos válidos son:'],
+            ['   - Cajero Multifuncional'],
+            ['   - Cajero de Operaciones'],
+            ['   - Cajero de Procesos'],
+            ['   - Encargado'],
+            ['   - Corporativo'],
+            [''],
+            ['Formato de importación:'],
+            ['Nombre | RUT | Turno | Código | Contraseña | Cargo']
+        ];
+        const wsInstrucciones = XLSX.utils.aoa_to_sheet(instrucciones);
+        XLSX.utils.book_append_sheet(wb, wsInstrucciones, 'Instrucciones');
+        
+        const fecha = new Date().toISOString().split('T')[0];
+        XLSX.writeFile(wb, `cajeros_${fecha}.xlsx`);
+        
+        mostrarNotificacion(`${cajerosExportar.length} cajeros exportados`, 'success');
+    }
+</script>
+
+
+</body>
+</html>
+
+
+
+

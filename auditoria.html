@@ -1,0 +1,195 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría - Historial de Movimientos</title>
+    <link rel="stylesheet" href="css/estilos.css">
+    <style>
+        .audit-filters {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .audit-filters select, .audit-filters input {
+            padding: 10px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+        }
+        .audit-table {
+            font-size: 0.9rem;
+        }
+        .audit-table td {
+            padding: 12px;
+        }
+        .tipo-entrada {
+            color: var(--success);
+            font-weight: bold;
+        }
+        .tipo-salida {
+            color: var(--danger);
+            font-weight: bold;
+        }
+        .tipo-edicion {
+            color: var(--warning);
+            font-weight: bold;
+        }
+        .force-save-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+}
+
+.force-save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 12px rgba(16, 185, 129, 0.4);
+}
+
+.force-save-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.force-save-btn.saving {
+    animation: pulse 1.5s infinite;
+}
+
+.save-status {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    display: none;
+}
+
+.save-status.show {
+    display: block;
+}
+
+.save-status.success {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #10b981;
+}
+
+.save-status.error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #ef4444;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <h1>📋 Auditoría - Historial de Movimientos</h1>
+                <div id="user-info"></div>
+            </div>
+            <nav class="main-nav" id="main-nav">
+                <!-- Se carga dinámicamente desde app.js -->
+            </nav>
+        </header>
+
+        <main>
+            <div class="audit-filters">
+                <select id="filtro-categoria" onchange="cargarAuditoria()" autocomplete="off">
+                 <!-- Las opciones se cargarán con JS -->
+                </select>
+                <select id="filtro-tipo" onchange="cargarAuditoria()" autocomplete="off">
+                    <option value="todos">Todos los tipos</option>
+                    <option value="entrada">Entradas (+)</option>
+                    <option value="salida">Salidas (-)</option>
+                    <option value="edicion">Ediciones</option>
+                </select>
+                <input type="date" id="filtro-fecha" onchange="cargarAuditoria()" autocomplete="off">
+                <input type="text" id="filtro-cajero" placeholder="Buscar cajero..." onkeyup="cargarAuditoria()" autocomplete="off">
+            </div>
+
+            <div class="table-container">
+                <table class="inventory-table audit-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha/Hora</th>
+                            <th>Cajero</th>
+                            <th>Código</th>
+                            <th>Categoría</th>
+                            <th>Item</th>
+                            <th>Tipo</th>
+                            <th>Cantidad</th>
+                            <th>Stock Anterior</th>
+                            <th>Stock Nuevo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-auditoria">
+                        <!-- Registros se cargan dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button onclick="exportarAuditoria()" class="btn-export">📥 Exportar a Excel</button>
+                <button onclick="limpiarAuditoria()" class="btn-delete" style="background: var(--danger); color: white;">🗑️ Limpiar Historial</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="js/core/config.js"></script>
+    <script src="js/core/utils.js"></script>
+    <script src="js/core/storage.js"></script>
+    <script src="js/core/init.js"></script>
+    <script src="js/features/categories.js"></script>
+    <script src="js/core/session-navigation.js"></script>
+    <script src="js/features/inventory-items.js"></script>
+    <script src="js/features/auditoria.js"></script>
+    <script src="js/features/cajeros.js"></script>
+    <script src="js/features/reports-export.js"></script>
+    <script src="js/core/ui.js"></script>
+    <script src="js/features/conteos-tabs.js"></script>
+    <script src="js/features/backup.js"></script>
+    <script src="js/features/exhibicion.js"></script>
+    <script src="js/features/neveras.js"></script>
+    <script>
+    let esAdmin = false;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!verificarSesion()) return;
+        
+        // Verificar si es admin
+        esAdmin = esAdminActual();
+        
+        inicializarDatos();
+        cargarFiltrosCategoriasAuditoria();
+        cargarAuditoria();
+        
+        // Ocultar botón de limpiar si no es admin
+        if (!esAdmin) {
+            const btnLimpiar = document.querySelector('button[onclick="limpiarAuditoria()"]');
+            if (btnLimpiar) btnLimpiar.style.display = 'none';
+        }
+    });
+    </script>
+</body>
+</html>
+
+
+
+

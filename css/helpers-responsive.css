@@ -1,0 +1,92 @@
+﻿/* Utilidades */
+.hidden {
+    display: none !important;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-light);
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+    margin-bottom: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .main-nav {
+        justify-content: center;
+    }
+    
+    .nav-btn {
+        font-size: 0.9rem;
+        padding: 8px 16px;
+    }
+    
+    .inventory-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .two-column-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    /* Responsive del dashboard dividido */
+    .quick-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .category-card {
+        padding: 16px;
+    }
+    
+    .category-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 2rem;
+    }
+    
+    .category-name {
+        font-size: 1.1rem;
+    }
+    
+    .admin-card {
+        padding: 14px;
+    }
+}
+
+/* Animaciones */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.updating {
+    animation: pulse 1.5s infinite;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--secondary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+}
+

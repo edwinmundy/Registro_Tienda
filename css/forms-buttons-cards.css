@@ -1,0 +1,313 @@
+﻿/* Botones */
+.btn-primary, .btn-secondary, .btn-add, .btn-export {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-secondary {
+    background: var(--secondary);
+    color: white;
+}
+
+.btn-add {
+    background: var(--success);
+    color: white;
+}
+
+.btn-export {
+    background: var(--warning);
+    color: white;
+    margin-right: 10px;
+}
+
+/* Secciones */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.section-header h2 {
+    font-size: 1.5rem;
+    color: var(--text);
+}
+
+/* Grid de Inventario */
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.item-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    border-left: 4px solid var(--primary);
+    position: relative;
+    overflow: hidden;
+}
+
+.item-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+}
+
+.item-card.low-stock {
+    border-left-color: var(--danger);
+    background: linear-gradient(to right, var(--admin-bg), var(--card-bg));
+}
+
+.item-card.medium-stock {
+    border-left-color: var(--warning);
+}
+
+.item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 12px;
+}
+
+.item-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-edit {
+    background: var(--inventory-bg);
+    color: var(--primary);
+}
+
+.btn-delete {
+    background: var(--admin-bg);
+    color: var(--danger);
+}
+
+.btn-stock-decrease,
+.btn-stock-increase {
+    flex: 1;
+    font-weight: 700;
+}
+
+.btn-stock-decrease {
+    background: var(--danger-soft);
+    color: var(--danger-text);
+}
+
+.btn-stock-increase {
+    background: var(--success-soft);
+    color: var(--success-text);
+}
+
+.btn-icon:hover {
+    transform: scale(1.1);
+}
+
+.item-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.stat {
+    text-align: center;
+    padding: 8px;
+    background: var(--bg);
+    border-radius: 6px;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    text-transform: uppercase;
+}
+
+.stat-value {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: var(--text);
+}
+
+.stock-edit-trigger {
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--primary);
+    border-radius: 6px;
+}
+
+.stock-edit-trigger:hover,
+.stock-edit-trigger:focus {
+    background: var(--primary-soft);
+    outline: none;
+}
+
+.stock-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    margin-top: 12px;
+    overflow: hidden;
+}
+
+.stock-fill {
+    height: 100%;
+    background: var(--success);
+    transition: width 0.3s ease, background 0.3s ease;
+}
+
+.stock-fill.warning {
+    background: var(--warning);
+}
+
+.stock-fill.danger {
+    background: var(--danger);
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background: var(--card-bg);
+    margin: 5% auto;
+    padding: 30px;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: var(--shadow-lg);
+    animation: slideIn 0.3s ease;
+}
+
+.modal-stock-content {
+    max-width: 380px;
+}
+
+.stock-quick-summary {
+    margin: 18px 0;
+    padding: 14px;
+    background: var(--bg);
+    border-radius: 8px;
+}
+
+.stock-quick-name {
+    font-weight: 700;
+    color: var(--text);
+}
+
+.stock-quick-current {
+    margin-top: 4px;
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.close {
+    color: var(--text-light);
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 20px;
+}
+
+.close:hover {
+    color: var(--danger);
+}
+
+/* Formularios */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+

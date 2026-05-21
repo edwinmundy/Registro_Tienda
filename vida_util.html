@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vida útil - Productos</title>
+    <link rel="stylesheet" href="css/estilos.css">
+    <style>
+        .vida-util-toolbar {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .vida-util-filtros {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .vida-util-filtros input,
+        .vida-util-filtros select {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--card-bg);
+            color: var(--text);
+        }
+
+        .vida-util-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .vida-util-table-wrap {
+            overflow: auto;
+            max-height: 68vh;
+        }
+
+        .vida-util-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.92rem;
+        }
+
+        .vida-util-table th,
+        .vida-util-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        .vida-util-table th {
+            background: var(--bg);
+            color: var(--text-light);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .vida-util-table tr:hover td {
+            background: var(--bg);
+        }
+
+        .vida-util-dias {
+            width: 100px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--card-bg);
+            color: var(--text);
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .estado-vinculo {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .estado-vinculo.activo {
+            background: var(--success-soft);
+            color: var(--success-text);
+        }
+
+        .estado-vinculo.inactivo {
+            background: var(--warning-soft);
+            color: var(--warning-text);
+        }
+
+        .vida-switch {
+            position: relative;
+            display: inline-flex;
+            width: 48px;
+            height: 26px;
+            cursor: pointer;
+        }
+
+        .vida-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .vida-slider {
+            position: absolute;
+            inset: 0;
+            background: var(--border);
+            border-radius: 999px;
+            transition: 0.2s;
+        }
+
+        .vida-slider::before {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            left: 3px;
+            top: 3px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            box-shadow: var(--shadow);
+            transition: 0.2s;
+        }
+
+        .vida-switch input:checked + .vida-slider {
+            background: var(--success);
+        }
+
+        .vida-switch input:checked + .vida-slider::before {
+            transform: translateX(22px);
+        }
+
+        .vida-util-empty {
+            padding: 42px 20px;
+            text-align: center;
+            color: var(--text-light);
+        }
+
+        .vida-util-note {
+            margin-bottom: 18px;
+            background: var(--primary-soft);
+            color: var(--text);
+            border-left: 4px solid var(--primary);
+            padding: 14px 16px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <h1>⏱️ Vida útil</h1>
+                <div id="user-info"></div>
+            </div>
+            <nav class="main-nav" id="main-nav"></nav>
+        </header>
+
+        <main>
+            <div class="vida-util-note">
+                Configura la vida útil por producto en días. Los productos deshabilitados no aparecerán como sugerencia en Rotación ni Saladette, pero sus registros se conservan aunque se eliminen de una categoría.
+            </div>
+
+            <div class="vida-util-toolbar">
+                <div class="vida-util-filtros">
+                    <input type="text" id="vida-util-busqueda" placeholder="Buscar producto..." oninput="renderizarVidaUtil()">
+                    <select id="vida-util-filtro-familia" onchange="renderizarVidaUtil()">
+                        <option value="">Todas las familias</option>
+                    </select>
+                    <select id="vida-util-filtro-estado" onchange="renderizarVidaUtil()">
+                        <option value="">Todos</option>
+                        <option value="habilitado">Habilitados</option>
+                        <option value="deshabilitado">Deshabilitados</option>
+                        <option value="sin-vinculo">Sin vínculo</option>
+                    </select>
+                </div>
+                <button class="btn-primary" onclick="sincronizarYRenderizarVidaUtil()">🔄 Sincronizar productos</button>
+            </div>
+
+            <section class="vida-util-panel">
+                <div class="vida-util-table-wrap">
+                    <table class="vida-util-table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Familia / Categoría</th>
+                                <th>Vida útil</th>
+                                <th>Habilitado</th>
+                                <th>Vínculo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vida-util-body"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/core/config.js"></script>
+    <script src="js/core/utils.js"></script>
+    <script src="js/core/storage.js"></script>
+    <script src="js/core/init.js"></script>
+    <script src="js/features/categories.js"></script>
+    <script src="js/core/session-navigation.js"></script>
+    <script src="js/features/inventory-items.js"></script>
+    <script src="js/features/auditoria.js"></script>
+    <script src="js/features/cajeros.js"></script>
+    <script src="js/features/reports-export.js"></script>
+    <script src="js/core/ui.js"></script>
+    <script src="js/features/conteos-tabs.js"></script>
+    <script src="js/features/backup.js"></script>
+    <script src="js/features/exhibicion.js"></script>
+    <script src="js/features/neveras.js"></script>
+    <script src="js/features/vida-util.js"></script>
+    <script>
+        let registrosVidaUtilVista = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!verificarSesion()) return;
+            inicializarDatos();
+
+            if (!esAdminActual()) {
+                mostrarNotificacion('Solo usuarios autorizados pueden configurar vida útil', 'error');
+                setTimeout(() => window.location.href = 'index.html', 1200);
+                return;
+            }
+
+            mostrarUsuarioActual();
+            actualizarNavegacion();
+            sincronizarYRenderizarVidaUtil(false);
+        });
+
+        function escaparHtmlVidaUtil(valor) {
+            return String(valor ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function sincronizarYRenderizarVidaUtil(notificar = true) {
+            registrosVidaUtilVista = sincronizarVidaUtilProductos();
+            cargarFiltroFamiliasVidaUtil();
+            renderizarVidaUtil();
+
+            if (notificar) {
+                mostrarNotificacion('Productos sincronizados', 'success');
+            }
+        }
+
+        function cargarFiltroFamiliasVidaUtil() {
+            const select = document.getElementById('vida-util-filtro-familia');
+            const actual = select.value;
+            const familias = Array.from(new Set(registrosVidaUtilVista.map(r => r.categoriaNombre || r.categoriaId || 'Sin familia')))
+                .sort((a, b) => a.localeCompare(b, 'es'));
+
+            select.innerHTML = '<option value="">Todas las familias</option>' + familias.map(familia => `
+                <option value="${escaparHtmlVidaUtil(familia)}">${escaparHtmlVidaUtil(familia)}</option>
+            `).join('');
+            select.value = familias.includes(actual) ? actual : '';
+        }
+
+        function obtenerRegistrosFiltradosVidaUtil() {
+            const busqueda = document.getElementById('vida-util-busqueda').value.trim().toLowerCase();
+            const familia = document.getElementById('vida-util-filtro-familia').value;
+            const estado = document.getElementById('vida-util-filtro-estado').value;
+
+            return registrosVidaUtilVista.filter(registro => {
+                const texto = `${registro.productoNombre || ''} ${registro.productoId || ''} ${registro.categoriaNombre || ''}`.toLowerCase();
+                if (busqueda && !texto.includes(busqueda)) return false;
+                if (familia && (registro.categoriaNombre || registro.categoriaId || 'Sin familia') !== familia) return false;
+                if (estado === 'habilitado' && registro.habilitado === false) return false;
+                if (estado === 'deshabilitado' && registro.habilitado !== false) return false;
+                if (estado === 'sin-vinculo' && registro.existeEnCategoria !== false) return false;
+                return true;
+            });
+        }
+
+        function renderizarVidaUtil() {
+            const tbody = document.getElementById('vida-util-body');
+            const registros = obtenerRegistrosFiltradosVidaUtil();
+
+            if (registros.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="vida-util-empty">No hay productos para mostrar.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = registros.map(registro => `
+                <tr>
+                    <td>
+                        <strong>${escaparHtmlVidaUtil(registro.productoNombre || registro.productoId)}</strong><br>
+                        <small style="color: var(--text-light);">ID: ${escaparHtmlVidaUtil(registro.productoId)}</small>
+                    </td>
+                    <td>
+                        ${escaparHtmlVidaUtil(registro.categoriaNombre || registro.categoriaId || 'Sin familia')}<br>
+                        <small style="color: var(--text-light);">ID: ${escaparHtmlVidaUtil(registro.categoriaId)}</small>
+                    </td>
+                    <td>
+                        <input class="vida-util-dias" type="number" min="1" value="${normalizarDiasVidaUtil(registro.vidaUtilDias)}" onchange="actualizarDiasVidaUtil('${escaparHtmlVidaUtil(registro.id)}', this.value)">
+                        <span style="color: var(--text-light); margin-left: 6px;">días</span>
+                    </td>
+                    <td>
+                        <label class="vida-switch" title="Habilitar o deshabilitar producto">
+                            <input type="checkbox" ${registro.habilitado !== false ? 'checked' : ''} onchange="actualizarHabilitadoVidaUtil('${escaparHtmlVidaUtil(registro.id)}', this.checked)">
+                            <span class="vida-slider"></span>
+                        </label>
+                    </td>
+                    <td>
+                        <span class="estado-vinculo ${registro.existeEnCategoria === false ? 'inactivo' : 'activo'}">
+                            ${registro.existeEnCategoria === false ? 'Sin vínculo' : 'Activo'}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function actualizarDiasVidaUtil(id, valor) {
+            actualizarVidaUtilProducto(id, { vidaUtilDias: valor });
+            registrosVidaUtilVista = obtenerRegistrosVidaUtil();
+            renderizarVidaUtil();
+            mostrarNotificacion('Vida útil actualizada', 'success');
+        }
+
+        function actualizarHabilitadoVidaUtil(id, habilitado) {
+            actualizarVidaUtilProducto(id, { habilitado });
+            registrosVidaUtilVista = obtenerRegistrosVidaUtil();
+            renderizarVidaUtil();
+            mostrarNotificacion(habilitado ? 'Producto habilitado' : 'Producto deshabilitado', 'success');
+        }
+    </script>
+</body>
+</html>

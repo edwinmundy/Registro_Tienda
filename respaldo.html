@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Respaldo Manual - Sistema de Inventario</title>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <h1>💾 Respaldo Manual</h1>
+                <div id="user-info"></div>
+            </div>
+            <nav class="main-nav" id="main-nav">
+                <!-- Se carga dinámicamente -->
+            </nav>
+        </header>
+
+        <main class="backup-page">
+            <section class="backup-hero">
+                <div>
+                    <h2>Guardar y restaurar información del sistema</h2>
+                    <p>Disponible solo para usuarios con permisos de Admin, Corporativo o Encargado.</p>
+                </div>
+                <span class="backup-status">Manual</span>
+            </section>
+
+            <section class="backup-summary-grid" id="backup-summary-grid">
+                <div class="backup-summary-card">
+                    <span class="backup-summary-label">Categorías</span>
+                    <strong id="backup-total-categorias">0</strong>
+                </div>
+                <div class="backup-summary-card">
+                    <span class="backup-summary-label">Productos</span>
+                    <strong id="backup-total-productos">0</strong>
+                </div>
+                <div class="backup-summary-card">
+                    <span class="backup-summary-label">Cajeros</span>
+                    <strong id="backup-total-cajeros">0</strong>
+                </div>
+                <div class="backup-summary-card">
+                    <span class="backup-summary-label">Auditoría</span>
+                    <strong id="backup-total-auditoria">0</strong>
+                </div>
+                <div class="backup-summary-card">
+                    <span class="backup-summary-label">Saladette</span>
+                    <strong id="backup-total-saladette">0</strong>
+                </div>
+                <div class="backup-summary-card">
+                    <span class="backup-summary-label">Vida útil</span>
+                    <strong id="backup-total-vida-util">0</strong>
+                </div>
+                <div class="backup-summary-card">
+                    <span class="backup-summary-label">Rotación</span>
+                    <strong id="backup-total-rotacion">0</strong>
+                </div>
+                <div class="backup-summary-card">
+                    <span class="backup-summary-label">Claves incluidas</span>
+                    <strong id="backup-total-claves">0</strong>
+                </div>
+            </section>
+
+            <section class="backup-actions-grid">
+                <article class="backup-action-card">
+                    <h3>📤 Descargar respaldo</h3>
+                    <p>Genera un archivo JSON con toda la información operativa del sistema. Se solicitará tu contraseña antes de descargar.</p>
+                    <button class="btn-primary" onclick="exportarLocalStorageCompleto()">💾 Descargar respaldo</button>
+                </article>
+
+                <article class="backup-action-card backup-action-danger">
+                    <h3>📥 Cargar respaldo</h3>
+                    <p>Restaura un archivo JSON generado por este sistema. Reemplazará la información actual luego de confirmar contraseña y aceptar la advertencia.</p>
+                    <input type="file" id="backup-file-input" accept=".json,application/json" style="display: none;" onchange="importarLocalStorageCompleto(event)">
+                    <button class="btn-secondary" onclick="document.getElementById('backup-file-input').click()">📂 Seleccionar respaldo</button>
+                </article>
+            </section>
+
+            <section class="backup-note">
+                <h3>Información incluida</h3>
+                <p>El respaldo incluye inventario, categorías, cajeros, auditoría, conteos, rotación, neveras, saladette y futuras claves internas del sistema. No incluye la sesión activa ni la preferencia de tema.</p>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/core/config.js"></script>
+    <script src="js/core/utils.js"></script>
+    <script src="js/core/storage.js"></script>
+    <script src="js/core/init.js"></script>
+    <script src="js/features/categories.js"></script>
+    <script src="js/core/session-navigation.js"></script>
+    <script src="js/features/inventory-items.js"></script>
+    <script src="js/features/auditoria.js"></script>
+    <script src="js/features/cajeros.js"></script>
+    <script src="js/features/reports-export.js"></script>
+    <script src="js/core/ui.js"></script>
+    <script src="js/features/conteos-tabs.js"></script>
+    <script src="js/features/backup.js"></script>
+    <script src="js/features/exhibicion.js"></script>
+    <script src="js/features/neveras.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!verificarSesion()) return;
+            inicializarDatos();
+
+            if (!esAdminActual()) {
+                mostrarNotificacion('Solo usuarios autorizados pueden usar respaldos', 'error');
+                setTimeout(() => window.location.href = 'index.html', 1200);
+                return;
+            }
+
+            actualizarResumenRespaldo();
+        });
+
+        function actualizarResumenRespaldo() {
+            const resumen = obtenerResumenRespaldoSistema();
+            document.getElementById('backup-total-categorias').textContent = resumen.categorias;
+            document.getElementById('backup-total-productos').textContent = resumen.productos;
+            document.getElementById('backup-total-cajeros').textContent = resumen.cajeros;
+            document.getElementById('backup-total-auditoria').textContent = resumen.auditoria;
+            document.getElementById('backup-total-saladette').textContent = resumen.saladette;
+            document.getElementById('backup-total-vida-util').textContent = resumen.vidaUtil;
+            document.getElementById('backup-total-rotacion').textContent = resumen.rotacion;
+            document.getElementById('backup-total-claves').textContent = resumen.claves;
+        }
+    </script>
+</body>
+</html>

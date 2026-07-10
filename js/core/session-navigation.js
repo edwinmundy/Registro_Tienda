@@ -1,4 +1,4 @@
-﻿// ==========================================
+// ==========================================
 // SISTEMA DE SESIONES
 // ==========================================
 
@@ -173,6 +173,7 @@ function actualizarNavegacion() {
                 <a href="rotacion.html" class="nav-btn ${paginaActual === 'rotacion.html' ? 'active' : ''}">🧁 Rotación</a>
                 <a href="neveras.html" class="nav-btn ${paginaActual === 'neveras.html' ? 'active' : ''}">🌡️ Neveras</a>
                 <a href="saladette.html" class="nav-btn ${paginaActual === 'saladette.html' ? 'active' : ''}">🥗 Saladette</a>
+                <a href="cierre_de_caja.html" class="nav-btn ${paginaActual === 'cierre_de_caja.html' ? 'active' : ''}">💵 Cierre caja</a>
 
                 <div class="categories-dropdown-container ${esPaginaCategoria ? 'active' : ''}" id="categories-dropdown">
                     <button class="nav-btn categories-toggle" onclick="toggleCategoriesDropdown(event)">

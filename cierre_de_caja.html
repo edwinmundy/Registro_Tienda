@@ -390,6 +390,23 @@
         </form>
     </div>
 
+    <div class="modal-overlay" id="payment-modal" aria-hidden="true">
+        <form class="cash-dialog" id="payment-form">
+            <h3 id="payment-modal-title">Registrar pago</h3>
+            <p id="payment-modal-description">Ingresa el monto del registro.</p>
+            <div class="field-grid">
+                <label>
+                    Monto
+                    <input id="payment-amount" type="text" inputmode="numeric" placeholder="Ejemplo: 15000" required>
+                </label>
+            </div>
+            <div class="dialog-actions">
+                <button type="button" class="btn-secondary" id="payment-cancel">Cancelar</button>
+                <button type="submit" class="btn-primary">Registrar</button>
+            </div>
+        </form>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="js/core/config.js"></script>
     <script src="js/core/utils.js"></script>
@@ -413,6 +430,7 @@
 
         const denominations = [20000, 10000, 5000, 2000, 1000, 500, 100, 50, 10];
         let currentCashDenominationIndex = 0;
+        let currentPaymentMethodKey = null;
 
         function formatMoney(value) {
             const amount = Math.max(0, Number(value) || 0);
@@ -521,17 +539,38 @@
             }
         }
 
-        async function registerPayment(methodKey) {
+        function openPaymentModal(methodKey) {
             const methodName = paymentMethods[methodKey];
-            const value = await solicitarDato(`Ingresa el monto para ${methodName}`, '', {
-                titulo: methodName,
-                inputTipo: 'text',
-                placeholder: 'Ejemplo: 15000',
-                textoAceptar: 'Registrar'
-            });
+            currentPaymentMethodKey = methodKey;
 
-            if (value === null) return;
+            document.getElementById('payment-modal-title').textContent = methodName;
+            document.getElementById('payment-modal-description').textContent = `Ingresa el monto para ${methodName}.`;
+            document.getElementById('payment-modal').classList.add('open');
+            document.getElementById('payment-modal').setAttribute('aria-hidden', 'false');
 
+            const input = document.getElementById('payment-amount');
+            input.value = '';
+            setTimeout(() => input.focus(), 0);
+        }
+
+        function closePaymentModal() {
+            document.getElementById('payment-modal').classList.remove('open');
+            document.getElementById('payment-modal').setAttribute('aria-hidden', 'true');
+            currentPaymentMethodKey = null;
+        }
+
+        function registerPayment(event) {
+            event.preventDefault();
+
+            const methodKey = currentPaymentMethodKey;
+            const methodName = paymentMethods[methodKey];
+
+            if (!methodName) {
+                closePaymentModal();
+                return;
+            }
+
+            const value = document.getElementById('payment-amount').value;
             const amount = parseAmount(value);
 
             if (!Number.isFinite(amount) || amount <= 0) {
@@ -545,6 +584,7 @@
                 label: methodName,
                 amount
             });
+            closePaymentModal();
         }
 
         function openCashModal() {
@@ -825,12 +865,14 @@
             renderCierreCaja();
 
             document.querySelectorAll('[data-payment]').forEach(button => {
-                button.addEventListener('click', () => registerPayment(button.dataset.payment));
+                button.addEventListener('click', () => openPaymentModal(button.dataset.payment));
             });
 
             document.getElementById('cash-btn').addEventListener('click', openCashModal);
             document.getElementById('cash-form').addEventListener('submit', registerCash);
             document.getElementById('cash-cancel').addEventListener('click', closeCashModal);
+            document.getElementById('payment-form').addEventListener('submit', registerPayment);
+            document.getElementById('payment-cancel').addEventListener('click', closePaymentModal);
             document.getElementById('clear-session-btn').addEventListener('click', clearCurrentSession);
             document.getElementById('export-xlsx-btn').addEventListener('click', exportCurrentRegisterXlsx);
             document.getElementById('cash-fund-input').addEventListener('change', updateCashFundFromInput);
@@ -838,6 +880,9 @@
             document.getElementById('cash-fund-input').addEventListener('focus', event => event.target.select());
             document.getElementById('cash-modal').addEventListener('click', event => {
                 if (event.target.id === 'cash-modal') closeCashModal();
+            });
+            document.getElementById('payment-modal').addEventListener('click', event => {
+                if (event.target.id === 'payment-modal') closePaymentModal();
             });
         });
     </script>

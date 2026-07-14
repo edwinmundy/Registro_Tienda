@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -411,7 +411,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        function procesarDatosExcel(data) {
+        async function procesarDatosExcel(data) {
             // Ignorar primera fila (headers), datos desde fila 2
             const filasValidas = data.slice(1);
             productosImportados = [];
@@ -445,12 +445,21 @@
             }
             
             // Confirmar importación
-            if (confirm(`¿Importar ${productosImportados.length} productos?\n\n⚠️ Los productos con ID duplicado serán actualizados.`)) {
+            const confirmado = await confirmarAccion(
+                `¿Importar ${productosImportados.length} productos?\n\nLos productos con ID duplicado serán actualizados.`,
+                {
+                    titulo: 'Importar productos',
+                    tipo: 'warning',
+                    textoAceptar: 'Importar'
+                }
+            );
+
+            if (confirmado) {
                 importarProductos();
             }
         }
 
-        function procesarDatosPegados() {
+        async function procesarDatosPegados() {
             const texto = document.getElementById('paste-zone').value.trim();
             if (!texto) {
                 mostrarNotificacion('No hay datos para procesar', 'error');
@@ -497,7 +506,16 @@
                 return;
             }
             
-            if (confirm(`¿Importar ${productosImportados.length} productos?\n\n⚠️ Los productos con ID duplicado serán actualizados.`)) {
+            const confirmado = await confirmarAccion(
+                `¿Importar ${productosImportados.length} productos?\n\nLos productos con ID duplicado serán actualizados.`,
+                {
+                    titulo: 'Importar productos',
+                    tipo: 'warning',
+                    textoAceptar: 'Importar'
+                }
+            );
+
+            if (confirmado) {
                 importarProductos();
             }
             

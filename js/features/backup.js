@@ -1,4 +1,4 @@
-﻿// ==========================================
+// ==========================================
 // FUNCIONES DE BACKUP Y RESET PARA ADMIN
 // ==========================================
 
@@ -6,7 +6,7 @@
  * Exporta todo el localStorage a un archivo JSON descargable
  * Solo disponible para administradores
  */
-function exportarLocalStorageCompleto() {
+async function exportarLocalStorageCompleto() {
     if (!verificarSesion()) return;
     
     const esAdmin = esAdminActual();
@@ -15,7 +15,7 @@ function exportarLocalStorageCompleto() {
         return;
     }
 
-    if (!confirmarPasswordUsuarioActual('exportar el respaldo completo')) return;
+    if (!await confirmarPasswordUsuarioActual('exportar el respaldo completo')) return;
     
     try {
         const datosExportar = obtenerDatosRespaldoSistema();
@@ -107,7 +107,7 @@ function obtenerUsuarioActualCompleto() {
         || null;
 }
 
-function confirmarPasswordUsuarioActual(nombreAccion) {
+async function confirmarPasswordUsuarioActual(nombreAccion) {
     const usuario = obtenerUsuarioActualCompleto();
 
     if (!usuario?.password) {
@@ -115,7 +115,16 @@ function confirmarPasswordUsuarioActual(nombreAccion) {
         return false;
     }
 
-    const password = prompt(`Confirmación requerida\n\nIngresa tu contraseña para ${nombreAccion}:`);
+    const password = await solicitarDato(
+        `Ingresa tu contraseña para ${nombreAccion}:`,
+        '',
+        {
+            titulo: 'Confirmación requerida',
+            tipo: 'warning',
+            inputTipo: 'password',
+            textoAceptar: 'Validar'
+        }
+    );
 
     if (password === null) {
         mostrarNotificacion('Operación cancelada', 'warning');
@@ -195,7 +204,7 @@ function obtenerResumenRespaldoSistema() {
  * Limpia completamente el localStorage del sistema
  * Solo disponible para administradores - REQUIERE CONFIRMACIÓN DOBLE
  */
-function limpiarLocalStorageCompleto() {
+async function limpiarLocalStorageCompleto() {
     if (!verificarSesion()) return;
     
     const esAdmin = esAdminActual();
@@ -204,15 +213,32 @@ function limpiarLocalStorageCompleto() {
         return;
     }
 
-    if (!confirmarPasswordUsuarioActual('borrar toda la información del sistema')) return;
+    if (!await confirmarPasswordUsuarioActual('borrar toda la información del sistema')) return;
     
     // Primera confirmación
-    if (!confirm('⚠️ ¿ESTÁS SEGURO?\n\nEsto eliminará TODOS los datos del sistema:\n✓ Categorías\n✓ Productos\n✓ Cajeros (excepto admin)\n✓ Auditoría\n✓ Conteos de cigarrillos\n✓ Historial\n✓ Rotación de productos\n\nEsta acción NO se puede deshacer.\n\n¿Deseas continuar?')) {
+    const confirmaLimpieza = await confirmarAccion(
+        '¿ESTÁS SEGURO?\n\nEsto eliminará TODOS los datos del sistema:\n✓ Categorías\n✓ Productos\n✓ Cajeros (excepto admin)\n✓ Auditoría\n✓ Conteos de cigarrillos\n✓ Historial\n✓ Rotación de productos\n\nEsta acción NO se puede deshacer.\n\n¿Deseas continuar?',
+        {
+            titulo: 'Eliminar todo el sistema',
+            tipo: 'warning',
+            textoAceptar: 'Continuar'
+        }
+    );
+
+    if (!confirmaLimpieza) {
         return;
     }
     
     // Segunda confirmación escribiendo ELIMINAR
-    const confirmacionFinal = prompt('⚠️ ÚLTIMA CONFIRMACIÓN\n\nEscribe "ELIMINAR" en mayúsculas para borrar todo el sistema:');
+    const confirmacionFinal = await solicitarDato(
+        'Escribe "ELIMINAR" en mayúsculas para borrar todo el sistema:',
+        '',
+        {
+            titulo: 'Última confirmación',
+            tipo: 'error',
+            textoAceptar: 'Eliminar sistema'
+        }
+    );
     
     if (confirmacionFinal !== 'ELIMINAR') {
         mostrarNotificacion('Operación cancelada', 'warning');
@@ -294,7 +320,7 @@ function limpiarLocalStorageCompleto() {
     }
 }
 
-function importarLocalStorageCompleto(event) {
+async function importarLocalStorageCompleto(event) {
     if (!verificarSesion()) return;
     
     const esAdmin = esAdminActual();
@@ -306,14 +332,14 @@ function importarLocalStorageCompleto(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    if (!confirmarPasswordUsuarioActual('cargar un respaldo completo')) {
+    if (!await confirmarPasswordUsuarioActual('cargar un respaldo completo')) {
         event.target.value = '';
         return;
     }
     
     const reader = new FileReader();
     
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
         try {
             const backup = JSON.parse(e.target.result);
             
@@ -324,7 +350,16 @@ function importarLocalStorageCompleto(event) {
             
             // Confirmar importación
             const fechaBackup = new Date(backup.metadata.fechaExportacion).toLocaleString('es-ES');
-            if (!confirm(`¿Importar backup del ${fechaBackup}?\n\n⚠️ Esto reemplazará todos los datos actuales.\n\nCategorías en backup: ${backup.metadata.totalCategorias || 'N/A'}\nRegistros: ${backup.metadata.totalRegistros || Object.keys(backup.datos).length}\n\n¿Continuar?`)) {
+            const confirmado = await confirmarAccion(
+                `¿Importar backup del ${fechaBackup}?\n\nEsto reemplazará todos los datos actuales.\n\nCategorías en backup: ${backup.metadata.totalCategorias || 'N/A'}\nRegistros: ${backup.metadata.totalRegistros || Object.keys(backup.datos).length}\n\n¿Continuar?`,
+                {
+                    titulo: 'Importar respaldo',
+                    tipo: 'warning',
+                    textoAceptar: 'Importar'
+                }
+            );
+
+            if (!confirmado) {
                 return;
             }
             

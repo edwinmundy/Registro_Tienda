@@ -1,4 +1,4 @@
-﻿/* Botones */
+/* Botones */
 .btn-primary, .btn-secondary, .btn-add, .btn-export {
     padding: 12px 24px;
     border: none;
@@ -309,5 +309,193 @@
 .form-group select:focus {
     outline: none;
     border-color: var(--primary);
+}
+
+/* Mensajes emergentes unificados */
+.app-toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(380px, calc(100vw - 32px));
+    pointer-events: none;
+}
+
+.app-toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--card-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-left: 5px solid var(--primary);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    font-weight: 600;
+    animation: appToastIn 0.25s ease;
+    pointer-events: auto;
+}
+
+.app-toast-exit {
+    animation: appToastOut 0.25s ease forwards;
+}
+
+.app-toast-icon,
+.app-dialog-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-weight: 800;
+    font-size: 0.85rem;
+}
+
+.app-toast-message {
+    line-height: 1.35;
+}
+
+.app-toast-success { border-left-color: var(--success); }
+.app-toast-success .app-toast-icon { background: var(--success-soft); color: var(--success-text); }
+.app-toast-error { border-left-color: var(--danger); }
+.app-toast-error .app-toast-icon { background: var(--danger-soft); color: var(--danger-text); }
+.app-toast-warning { border-left-color: var(--warning); }
+.app-toast-warning .app-toast-icon { background: var(--warning-soft); color: var(--warning-text); }
+.app-toast-info { border-left-color: var(--primary); }
+
+.app-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(15, 23, 42, 0.62);
+    backdrop-filter: blur(4px);
+}
+
+.app-dialog {
+    width: min(520px, 100%);
+    max-height: calc(100vh - 40px);
+    overflow: auto;
+    background: var(--card-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    animation: appDialogIn 0.2s ease;
+}
+
+.app-dialog-closing .app-dialog {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.app-dialog-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.app-dialog-title {
+    margin: 0;
+    color: var(--text);
+    font-size: 1.15rem;
+}
+
+.app-dialog-close {
+    margin-left: auto;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--bg);
+    color: var(--text-light);
+    cursor: pointer;
+    font-size: 1.4rem;
+    line-height: 1;
+}
+
+.app-dialog-close:hover {
+    background: var(--danger-soft);
+    color: var(--danger-text);
+}
+
+.app-dialog-body {
+    padding: 18px 20px 4px;
+    color: var(--text);
+}
+
+.app-dialog-body p {
+    margin: 0 0 10px;
+    line-height: 1.45;
+}
+
+.app-dialog-input-wrap {
+    padding: 6px 20px 0;
+}
+
+.app-dialog-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--text);
+    font-size: 1rem;
+}
+
+.app-dialog-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 114, 178, 0.14);
+}
+
+.app-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 18px 20px 20px;
+    flex-wrap: wrap;
+}
+
+.app-dialog-success .app-dialog-icon { background: var(--success-soft); color: var(--success-text); }
+.app-dialog-error .app-dialog-icon { background: var(--danger-soft); color: var(--danger-text); }
+.app-dialog-warning .app-dialog-icon { background: var(--warning-soft); color: var(--warning-text); }
+.app-dialog-info .app-dialog-icon { background: var(--primary-soft); color: var(--primary); }
+
+@media (max-width: 520px) {
+    .app-toast-container {
+        top: 12px;
+        right: 12px;
+        left: 12px;
+        width: auto;
+    }
+
+    .app-dialog {
+        border-radius: 12px;
+    }
+
+    .app-dialog-actions {
+        flex-direction: column-reverse;
+    }
+
+    .app-dialog-actions .btn-primary,
+    .app-dialog-actions .btn-secondary {
+        width: 100%;
+        justify-content: center;
+    }
 }
 

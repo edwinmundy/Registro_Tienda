@@ -1,4 +1,4 @@
-﻿// ==========================================
+// ==========================================
 // INVENTARIO GENERAL
 // ==========================================
 
@@ -171,13 +171,19 @@ function exportarAuditoria() {
     mostrarNotificacion('Historial exportado a Excel correctamente');
 }
 
-function limpiarAuditoria() {
+async function limpiarAuditoria() {
     if (!verificarSesion()) return;
     
-    if (confirm('¿Está seguro de eliminar TODO el historial de auditoría?')) {
-        guardarDatos('auditoria', []);
-        cargarAuditoria();
-        mostrarNotificacion('Historial limpiado correctamente');
-    }
+    const confirmado = await confirmarAccion('¿Está seguro de eliminar TODO el historial de auditoría?', {
+        titulo: 'Limpiar auditoría',
+        tipo: 'warning',
+        textoAceptar: 'Eliminar historial'
+    });
+
+    if (!confirmado) return;
+
+    guardarDatos('auditoria', []);
+    cargarAuditoria();
+    mostrarNotificacion('Historial limpiado correctamente');
 }
 

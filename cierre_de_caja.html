@@ -133,6 +133,30 @@
             font-size: 0.82rem;
         }
 
+        .edit-log-row {
+            background: var(--warning-soft);
+        }
+
+        .edit-log-row td {
+            color: var(--warning-text);
+            font-weight: 700;
+        }
+
+        .btn-edit-record {
+            padding: 8px 12px;
+            border: 0;
+            border-radius: 8px;
+            background: var(--primary-soft);
+            color: var(--primary);
+            cursor: pointer;
+            font-weight: 800;
+        }
+
+        .btn-edit-record:hover {
+            background: var(--primary);
+            color: white;
+        }
+
         .empty-cell {
             color: var(--text-light);
             font-style: italic;
@@ -287,17 +311,17 @@
                     <article class="total-panel">
                         <span class="total-label">Total Amipass</span>
                         <strong class="total-value" id="total-amipass">$0.-</strong>
-                        <button type="button" class="btn-primary header-button" data-payment="amipass">Amipass</button>
+                        <button type="button" class="btn-primary header-button" data-payment="amipass" onclick="openPaymentModal('amipass')">Amipass</button>
                     </article>
                     <article class="total-panel">
                         <span class="total-label">Total Uber</span>
                         <strong class="total-value" id="total-uber">$0.-</strong>
-                        <button type="button" class="btn-primary header-button" data-payment="uber">Uber</button>
+                        <button type="button" class="btn-primary header-button" data-payment="uber" onclick="openPaymentModal('uber')">Uber</button>
                     </article>
                     <article class="total-panel">
                         <span class="total-label">Total Rappi-PddYa</span>
                         <strong class="total-value" id="total-rappi">$0.-</strong>
-                        <button type="button" class="btn-primary header-button" data-payment="rappi">Rappi-PddYa</button>
+                        <button type="button" class="btn-primary header-button" data-payment="rappi" onclick="openPaymentModal('rappi')">Rappi-PddYa</button>
                     </article>
                     <article class="total-panel cash-total">
                         <span class="total-label">Total Efectivo</span>
@@ -347,6 +371,7 @@
                                 <th>Registro</th>
                                 <th>Monto</th>
                                 <th>Usuario</th>
+                                <th>Accion</th>
                             </tr>
                         </thead>
                         <tbody id="history-table-body"></tbody>
@@ -407,6 +432,23 @@
         </form>
     </div>
 
+    <div class="modal-overlay" id="edit-modal" aria-hidden="true">
+        <form class="cash-dialog" id="edit-form">
+            <h3 id="edit-modal-title">Editar registro</h3>
+            <p id="edit-modal-description">Actualiza el valor y se guardara una marca de edicion en el registro.</p>
+            <div class="field-grid">
+                <label>
+                    Nuevo valor
+                    <input id="edit-value" type="text" inputmode="numeric" required>
+                </label>
+            </div>
+            <div class="dialog-actions">
+                <button type="button" class="btn-secondary" id="edit-cancel">Cancelar</button>
+                <button type="submit" class="btn-primary">Guardar edicion</button>
+            </div>
+        </form>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="js/core/config.js"></script>
     <script src="js/core/utils.js"></script>
@@ -431,6 +473,7 @@
         const denominations = [20000, 10000, 5000, 2000, 1000, 500, 100, 50, 10];
         let currentCashDenominationIndex = 0;
         let currentPaymentMethodKey = null;
+        let currentEditRecordId = null;
 
         function formatMoney(value) {
             const amount = Math.max(0, Number(value) || 0);
@@ -522,8 +565,8 @@
                 sessionId: getActiveSessionId(),
                 fechaISO: now.toISOString(),
                 fechaLocal: now.toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'medium' }),
-                usuarioNombre: sesion?.cajeroNombre || 'Sin usuario',
-                usuarioCodigo: sesion?.cajeroCodigo || '',
+                usuarioNombre: sesion && sesion.cajeroNombre ? sesion.cajeroNombre : 'Sin usuario',
+                usuarioCodigo: sesion && sesion.cajeroCodigo ? sesion.cajeroCodigo : '',
                 ...data
             };
         }
@@ -537,6 +580,34 @@
             if (notify) {
                 mostrarNotificacion('Registro guardado', 'success');
             }
+        }
+
+        function getUserLabel(record) {
+            return record.usuarioCodigo
+                ? `${record.usuarioNombre} (${record.usuarioCodigo})`
+                : record.usuarioNombre;
+        }
+
+        function getRecordDetail(record) {
+            if (record.type === 'edit') {
+                return `EDICION: ${record.targetLabel || 'Registro'}`;
+            }
+
+            return record.type === 'cash'
+                ? `${record.label}: ${record.denomination.toLocaleString('es-CL')} x ${record.quantity}`
+                : record.label;
+        }
+
+        function getRecordAmountDisplay(record) {
+            if (record.type === 'edit') {
+                if (record.editedRecordType === 'cash') {
+                    return `${record.oldQuantity} -> ${record.newQuantity}`;
+                }
+
+                return `${formatMoney(record.oldAmount)} -> ${formatMoney(record.newAmount)}`;
+            }
+
+            return formatMoney(record.amount);
         }
 
         function openPaymentModal(methodKey) {
@@ -585,6 +656,111 @@
                 amount
             });
             closePaymentModal();
+        }
+
+        function openEditModal(recordId) {
+            const record = getRecords().find(item => item.id === recordId && item.sessionId === getActiveSessionId());
+
+            if (!record || record.type === 'edit') {
+                mostrarNotificacion('No se pudo encontrar el registro editable', 'error');
+                return;
+            }
+
+            currentEditRecordId = recordId;
+            document.getElementById('edit-modal-title').textContent = `Editar ${record.label}`;
+
+            const description = record.type === 'cash'
+                ? `Denominacion ${record.denomination.toLocaleString('es-CL')}. Ingresa la nueva cantidad.`
+                : `Ingresa el nuevo monto para ${record.label}.`;
+            const input = document.getElementById('edit-value');
+
+            document.getElementById('edit-modal-description').textContent = description;
+            input.value = record.type === 'cash' ? record.quantity : formatMoney(record.amount);
+            document.getElementById('edit-modal').classList.add('open');
+            document.getElementById('edit-modal').setAttribute('aria-hidden', 'false');
+            setTimeout(() => {
+                input.focus();
+                input.select();
+            }, 0);
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.remove('open');
+            document.getElementById('edit-modal').setAttribute('aria-hidden', 'true');
+            currentEditRecordId = null;
+        }
+
+        function registerEdit(event) {
+            event.preventDefault();
+
+            const records = getRecords();
+            const index = records.findIndex(record => record.id === currentEditRecordId && record.sessionId === getActiveSessionId());
+
+            if (index === -1 || records[index].type === 'edit') {
+                mostrarNotificacion('No se pudo editar el registro', 'error');
+                closeEditModal();
+                return;
+            }
+
+            const original = records[index];
+            const inputValue = document.getElementById('edit-value').value;
+            const parsedValue = parseAmount(inputValue);
+
+            if (!Number.isFinite(parsedValue) || parsedValue < 0 || (original.type === 'payment' && parsedValue === 0)) {
+                mostrarNotificacion('Ingresa un valor valido', 'error');
+                return;
+            }
+
+            const oldAmount = original.amount || 0;
+            const oldQuantity = original.quantity || 0;
+
+            if (original.type === 'cash') {
+                if (parsedValue === oldQuantity) {
+                    mostrarNotificacion('No hubo cambios para guardar', 'info');
+                    closeEditModal();
+                    return;
+                }
+
+                records[index] = {
+                    ...original,
+                    quantity: parsedValue,
+                    amount: original.denomination * parsedValue,
+                    edited: true,
+                    editedAtISO: new Date().toISOString()
+                };
+            } else {
+                if (parsedValue === oldAmount) {
+                    mostrarNotificacion('No hubo cambios para guardar', 'info');
+                    closeEditModal();
+                    return;
+                }
+
+                records[index] = {
+                    ...original,
+                    amount: parsedValue,
+                    edited: true,
+                    editedAtISO: new Date().toISOString()
+                };
+            }
+
+            const updated = records[index];
+            records.push(buildRecord({
+                type: 'edit',
+                label: 'Edicion',
+                targetId: updated.id,
+                targetLabel: getRecordDetail(updated),
+                editedRecordType: updated.type,
+                oldAmount,
+                newAmount: updated.amount,
+                oldQuantity,
+                newQuantity: updated.quantity || 0,
+                amount: 0
+            }));
+
+            saveRecords(records);
+            renderCierreCaja();
+            closeEditModal();
+            mostrarNotificacion('Edicion guardada y destacada en el registro', 'success');
         }
 
         function openCashModal() {
@@ -774,14 +950,10 @@
                 .sort((a, b) => new Date(a.fechaISO) - new Date(b.fechaISO))
                 .map(record => ({
                     'Fecha y hora': record.fechaLocal,
-                    'Tipo': record.type === 'cash' ? 'Efectivo' : record.label,
-                    'Detalle': record.type === 'cash'
-                        ? `${record.denomination.toLocaleString('es-CL')} x ${record.quantity}`
-                        : record.label,
-                    'Monto': record.amount,
-                    'Usuario': record.usuarioCodigo
-                        ? `${record.usuarioNombre} (${record.usuarioCodigo})`
-                        : record.usuarioNombre
+                    'Tipo': record.type === 'cash' ? 'Efectivo' : record.type === 'edit' ? 'Edicion' : record.label,
+                    'Detalle': getRecordDetail(record),
+                    'Monto': getRecordAmountDisplay(record),
+                    'Usuario': getUserLabel(record)
                 }));
 
             const cashRows = getCashRows(records).map(row => ({
@@ -825,25 +997,29 @@
 
             if (sortedRecords.length === 0) {
                 const row = document.createElement('tr');
-                row.innerHTML = '<td colspan="4" class="empty-cell">Sin registros en la sesion actual</td>';
+                row.innerHTML = '<td colspan="5" class="empty-cell">Sin registros en la sesion actual</td>';
                 tbody.appendChild(row);
                 return;
             }
 
             sortedRecords.forEach(record => {
-                const detail = record.type === 'cash'
-                    ? `${record.label}: ${record.denomination.toLocaleString('es-CL')} x ${record.quantity}`
-                    : record.label;
-                const user = record.usuarioCodigo
-                    ? `${record.usuarioNombre} (${record.usuarioCodigo})`
-                    : record.usuarioNombre;
+                const detail = getRecordDetail(record);
+                const amountDisplay = getRecordAmountDisplay(record);
+                const user = getUserLabel(record);
                 const row = document.createElement('tr');
+                const action = record.type === 'edit'
+                    ? 'Destacada'
+                    : `<button type="button" class="btn-edit-record" onclick="openEditModal('${record.id}')">Editar</button>`;
 
+                if (record.type === 'edit') {
+                    row.className = 'edit-log-row';
+                }
                 row.innerHTML = `
                     <td>${record.fechaLocal}</td>
                     <td>${detail}</td>
-                    <td>${formatMoney(record.amount)}</td>
+                    <td>${amountDisplay}</td>
                     <td>${user}</td>
+                    <td>${action}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -864,15 +1040,13 @@
             getActiveSessionId();
             renderCierreCaja();
 
-            document.querySelectorAll('[data-payment]').forEach(button => {
-                button.addEventListener('click', () => openPaymentModal(button.dataset.payment));
-            });
-
             document.getElementById('cash-btn').addEventListener('click', openCashModal);
             document.getElementById('cash-form').addEventListener('submit', registerCash);
             document.getElementById('cash-cancel').addEventListener('click', closeCashModal);
             document.getElementById('payment-form').addEventListener('submit', registerPayment);
             document.getElementById('payment-cancel').addEventListener('click', closePaymentModal);
+            document.getElementById('edit-form').addEventListener('submit', registerEdit);
+            document.getElementById('edit-cancel').addEventListener('click', closeEditModal);
             document.getElementById('clear-session-btn').addEventListener('click', clearCurrentSession);
             document.getElementById('export-xlsx-btn').addEventListener('click', exportCurrentRegisterXlsx);
             document.getElementById('cash-fund-input').addEventListener('change', updateCashFundFromInput);
@@ -883,6 +1057,9 @@
             });
             document.getElementById('payment-modal').addEventListener('click', event => {
                 if (event.target.id === 'payment-modal') closePaymentModal();
+            });
+            document.getElementById('edit-modal').addEventListener('click', event => {
+                if (event.target.id === 'edit-modal') closeEditModal();
             });
         });
     </script>

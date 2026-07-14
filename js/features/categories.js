@@ -1,4 +1,4 @@
-﻿// ==========================================
+// ==========================================
 // SISTEMA DE CATEGORÍAS DINÁMICAS
 // ==========================================
 
@@ -133,7 +133,7 @@ function crearCategoria(id, nombre, icono = '📦', descripcion = '') {
 // Alias para compatibilidad con categorias.html
 const crearCategoriaCompleta = crearCategoria;
 
-function eliminarCategoria(id) {
+async function eliminarCategoria(id) {
     const categorias = obtenerCategorias();
     const categoria = categorias.find(c => c.id === id);
     
@@ -147,7 +147,16 @@ function eliminarCategoria(id) {
         return false;
     }
     
-    if (!confirm(`¿Estás seguro de eliminar la categoría "${categoria.nombre}"? Se perderán todos los items.`)) {
+    const confirmado = await confirmarAccion(
+        `¿Estás seguro de eliminar la categoría "${categoria.nombre}"?\n\nSe perderán todos los items.`,
+        {
+            titulo: 'Eliminar categoría',
+            tipo: 'warning',
+            textoAceptar: 'Eliminar'
+        }
+    );
+
+    if (!confirmado) {
         return false;
     }
     

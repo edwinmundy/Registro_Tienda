@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -366,6 +366,7 @@ autocomplete="off"
 <option value="Cajero de Operaciones">Cajero de Operaciones</option>
 <option value="Cajero de Procesos">Cajero de Procesos</option>
 <option value="Encargado">Encargado</option>
+<option value="Jefe">Jefe</option>
 <option value="Corporativo">Corporativo</option>
 
 </select>
@@ -570,7 +571,7 @@ function configurarInterfazCajeros() {
         reader.readAsArrayBuffer(file);
     }
 
-    function procesarDatosExcelCajeros(data) {
+    async function procesarDatosExcelCajeros(data) {
         // Ignorar primera fila (headers), datos desde fila 2
         const filasValidas = data.slice(1);
         cajerosImportados = [];
@@ -611,12 +612,21 @@ function configurarInterfazCajeros() {
         }
         
         // Confirmar importación
-        if (confirm(`¿Importar ${cajerosImportados.length} cajeros?\n\n⚠️ Esto agregará los cajeros a la lista existente.`)) {
+        const confirmado = await confirmarAccion(
+            `¿Importar ${cajerosImportados.length} cajeros?\n\nEsto agregará los cajeros a la lista existente.`,
+            {
+                titulo: 'Importar cajeros',
+                tipo: 'warning',
+                textoAceptar: 'Importar'
+            }
+        );
+
+        if (confirmado) {
             importarCajeros();
         }
     }
 
-    function procesarDatosPegadosCajeros() {
+    async function procesarDatosPegadosCajeros() {
         const texto = document.getElementById('paste-zone-cajeros').value.trim();
         if (!texto) {
             mostrarNotificacion('No hay datos para procesar', 'error');
@@ -667,7 +677,16 @@ function configurarInterfazCajeros() {
             return;
         }
         
-        if (confirm(`¿Importar ${cajerosImportados.length} cajeros?\n\n⚠️ Esto agregará los cajeros a la lista existente.`)) {
+        const confirmado = await confirmarAccion(
+            `¿Importar ${cajerosImportados.length} cajeros?\n\nEsto agregará los cajeros a la lista existente.`,
+            {
+                titulo: 'Importar cajeros',
+                tipo: 'warning',
+                textoAceptar: 'Importar'
+            }
+        );
+
+        if (confirmado) {
             importarCajeros();
         }
         
@@ -758,6 +777,7 @@ function configurarInterfazCajeros() {
             ['   - Cajero de Operaciones'],
             ['   - Cajero de Procesos'],
             ['   - Encargado'],
+            ['   - Jefe'],
             ['   - Corporativo'],
             [''],
             ['Formato de importación:'],

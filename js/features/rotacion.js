@@ -1665,7 +1665,7 @@ const App = (function() {
         mostrarToast(`Bandeja "${nombre}" creada (${filas}×${columnas})`, 'success');
     }
 
-    function editarBandeja(bandejaId) {
+    async function editarBandeja(bandejaId) {
         if (!esAdminActual()) {
             mostrarToast('Solo el administrador puede editar bandejas', 'error');
             return;
@@ -1673,7 +1673,10 @@ const App = (function() {
 
         const bandeja = state.bandejas.find(b => b.id === bandejaId);
         if (!bandeja) return;
-        const nuevoNombre = prompt('Nuevo nombre de la bandeja:', bandeja.nombre);
+        const nuevoNombre = await solicitarDato('Nuevo nombre de la bandeja:', bandeja.nombre, {
+            titulo: 'Editar bandeja',
+            tipo: 'info'
+        });
         if (nuevoNombre === null) return;
         const nombreLimpio = nuevoNombre.trim();
         if (!nombreLimpio) {
@@ -1690,7 +1693,7 @@ const App = (function() {
         mostrarToast('Nombre actualizado', 'success');
     }
 
-    function eliminarBandeja(bandejaId) {
+    async function eliminarBandeja(bandejaId) {
         if (!esAdminActual()) {
             mostrarToast('Solo el administrador puede eliminar bandejas', 'error');
             return;
@@ -1698,7 +1701,12 @@ const App = (function() {
 
         const bandeja = state.bandejas.find(b => b.id === bandejaId);
         if (!bandeja) return;
-        if (!confirm(`¿Eliminar la bandeja "${bandeja.nombre}"?`)) return;
+        const confirmado = await confirmarAccion(`¿Eliminar la bandeja "${bandeja.nombre}"?`, {
+            titulo: 'Eliminar bandeja',
+            tipo: 'warning',
+            textoAceptar: 'Eliminar'
+        });
+        if (!confirmado) return;
         registrarMovimiento('liberacion', null, bandeja, `Bandeja eliminada: ${bandeja.nombre}`);
         state.bandejas = state.bandejas.filter(b => b.id !== bandejaId);
         guardarLocalStorage();
@@ -1798,8 +1806,16 @@ const App = (function() {
         `).join('');
     }
 
-    function limpiarHistorial() {
-        if (!confirm('¿Estás seguro de que deseas eliminar TODO el historial de movimientos? Esta acción no se puede deshacer.')) return;
+    async function limpiarHistorial() {
+        const confirmado = await confirmarAccion(
+            '¿Estás seguro de que deseas eliminar TODO el historial de movimientos?\n\nEsta acción no se puede deshacer.',
+            {
+                titulo: 'Limpiar historial',
+                tipo: 'warning',
+                textoAceptar: 'Eliminar historial'
+            }
+        );
+        if (!confirmado) return;
         state.historial = [];
         guardarLocalStorage();
         renderHistorial();
@@ -2022,6 +2038,11 @@ const App = (function() {
     const exportarCSV = exportarXLSX;
 
     function mostrarToast(mensaje, tipo = 'success') {
+        if (typeof mostrarNotificacion === 'function') {
+            mostrarNotificacion(mensaje, tipo);
+            return;
+        }
+
         const container = document.getElementById('toastContainer');
         const toast = document.createElement('div');
         toast.className = `toast ${tipo}`;

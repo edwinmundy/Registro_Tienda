@@ -1,4 +1,4 @@
-﻿// ==========================================
+// ==========================================
 // SISTEMA DE INVENTARIO INTEGRADO V1.0
 // ==========================================
 
@@ -23,7 +23,7 @@ const DATOS_DEFAULT = {
 const APP_CONFIG = {
     adminCode: 'ADMIN',
     adminPassword: '63717',
-    adminCargos: ['Encargado', 'Corporativo'],
+    adminCargos: ['Encargado', 'Jefe', 'Corporativo'],
     sessionDurationMs: 8 * 60 * 60 * 1000,
     notificationDurationMs: 3000,
     maxAuditoria: 1000,

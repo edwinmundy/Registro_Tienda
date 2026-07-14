@@ -147,3 +147,4 @@ function actualizarVidaUtilProducto(id, cambios) {
     guardarRegistrosVidaUtil(registros);
     return true;
 }
+

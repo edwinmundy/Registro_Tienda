@@ -1,4 +1,4 @@
-﻿// ==========================================
+// ==========================================
 // GESTIÓN DE CAJEROS
 // ==========================================
 
@@ -66,6 +66,10 @@ function crearCardCajero(cajero) {
     `;
 }
 
+function esCajeroAdminPrincipal(cajero) {
+    return cajero?.codigo === APP_CONFIG.adminCode;
+}
+
 function guardarCajero(event) {
     event.preventDefault();
     
@@ -102,7 +106,9 @@ function guardarCajero(event) {
         return;
     }
     
-    if (id === 'admin-1' && cajero.codigo !== APP_CONFIG.adminCode) {
+    const cajeroOriginal = id ? obtenerDatos('cajeros').find(c => c.id === id) : null;
+
+    if (esCajeroAdminPrincipal(cajeroOriginal) && cajero.codigo !== APP_CONFIG.adminCode) {
         mostrarNotificacion('No se puede cambiar el código del administrador principal', 'error');
         return;
     }
@@ -129,15 +135,15 @@ function guardarCajero(event) {
 }
 
 function editarCajero(id) {
-    if (id === 'admin-1') {
-        mostrarNotificacion('El administrador principal no puede ser editado desde aquí', 'error');
-        return;
-    }
-    
     const cajeros = obtenerDatos('cajeros');
     const cajero = cajeros.find(c => c.id === id);
     
     if (!cajero) return;
+
+    if (esCajeroAdminPrincipal(cajero)) {
+        mostrarNotificacion('El administrador principal no puede ser editado desde aquí', 'error');
+        return;
+    }
     
     document.getElementById('cajero-id').value = cajero.id;
     document.getElementById('cajero-nombre').value = cajero.nombre;
@@ -151,21 +157,28 @@ function editarCajero(id) {
     document.querySelector('#form-cajero .btn-primary').textContent = '💾 Actualizar';
 }
 
-function eliminarCajero(id) {
+async function eliminarCajero(id) {
     if (!esAdminActual()) {
         mostrarNotificacion('Solo el administrador puede eliminar cajeros', 'error');
         return;
     }
 
-    if (!confirm('¿Eliminar este cajero permanentemente?')) return;
+    let cajeros = obtenerDatos('cajeros');
+    const cajeroEliminado = cajeros.find(c => c.id === id);
 
-    if (id === 'admin-1') {
+    if (!cajeroEliminado) return;
+
+    if (esCajeroAdminPrincipal(cajeroEliminado)) {
         mostrarNotificacion('No se puede eliminar el administrador principal', 'error');
         return;
     }
 
-    let cajeros = obtenerDatos('cajeros');
-    const cajeroEliminado = cajeros.find(c => c.id === id);
+    const confirmado = await confirmarAccion('¿Eliminar este cajero permanentemente?', {
+        titulo: 'Eliminar cajero',
+        tipo: 'warning',
+        textoAceptar: 'Eliminar'
+    });
+    if (!confirmado) return;
 
     cajeros = cajeros.filter(c => c.id !== id);
 

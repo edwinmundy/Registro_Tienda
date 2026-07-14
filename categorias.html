@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -850,7 +850,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        function procesarDatosExcelCat(data) {
+        async function procesarDatosExcelCat(data) {
             // Ignorar primera fila (headers), datos desde fila 2
             const filasValidas = data.slice(1);
             categoriasImportadas = [];
@@ -881,12 +881,21 @@
             }
             
             // Confirmar importación
-            if (confirm(`¿Importar ${categoriasImportadas.length} categorías?\n\n⚠️ Las categorías con ID duplicado serán omitidas.`)) {
+            const confirmado = await confirmarAccion(
+                `¿Importar ${categoriasImportadas.length} categorías?\n\nLas categorías con ID duplicado serán omitidas.`,
+                {
+                    titulo: 'Importar categorías',
+                    tipo: 'warning',
+                    textoAceptar: 'Importar'
+                }
+            );
+
+            if (confirmado) {
                 importarCategorias();
             }
         }
 
-        function procesarDatosPegadosCat() {
+        async function procesarDatosPegadosCat() {
             const texto = document.getElementById('paste-zone-cat').value.trim();
             if (!texto) {
                 mostrarNotificacion('No hay datos para procesar', 'error');
@@ -933,7 +942,16 @@
                 return;
             }
             
-            if (confirm(`¿Importar ${categoriasImportadas.length} categorías?\n\n⚠️ Las categorías con ID duplicado serán omitidas.`)) {
+            const confirmado = await confirmarAccion(
+                `¿Importar ${categoriasImportadas.length} categorías?\n\nLas categorías con ID duplicado serán omitidas.`,
+                {
+                    titulo: 'Importar categorías',
+                    tipo: 'warning',
+                    textoAceptar: 'Importar'
+                }
+            );
+
+            if (confirmado) {
                 importarCategorias();
             }
             

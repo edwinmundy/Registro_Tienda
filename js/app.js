@@ -1,4 +1,4 @@
-﻿// ==========================================
+// ==========================================
 // SISTEMA DE INVENTARIO INTEGRADO V1.0
 // Cargador de compatibilidad para paginas que aun referencien js/app.js
 // ==========================================

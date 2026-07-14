@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -27,6 +27,12 @@
             margin-bottom: 24px;
             box-shadow: var(--shadow);
         }
+
+        [data-theme="dark"] .panel-agregar-saladette {
+            background: linear-gradient(135deg, var(--admin-bg) 0%, var(--card-bg) 100%);
+            border: 1px solid var(--admin-border);
+            color: var(--text);
+        }
         
         .panel-agregar-saladette h3 {
             margin-bottom: 16px;
@@ -34,6 +40,11 @@
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+
+        [data-theme="dark"] .panel-agregar-saladette h3,
+        [data-theme="dark"] .panel-agregar-saladette label {
+            color: var(--warning-text) !important;
         }
         
         .form-saladette {
@@ -49,6 +60,15 @@
             border-radius: 8px;
             font-size: 1rem;
             width: 100%;
+        }
+
+        [data-theme="dark"] .form-saladette select,
+        [data-theme="dark"] .form-saladette input,
+        [data-theme="dark"] .filtros-saladette select,
+        [data-theme="dark"] .filtros-saladette input {
+            background: var(--card-bg);
+            color: var(--text);
+            border-color: var(--border);
         }
         
         .form-row-2 {
@@ -78,6 +98,15 @@
         .btn-agregar-saladette:hover {
             background: #b45309;
             transform: translateY(-2px);
+        }
+
+        [data-theme="dark"] .btn-agregar-saladette {
+            background: var(--warning);
+            color: #111827;
+        }
+
+        [data-theme="dark"] .btn-agregar-saladette:hover {
+            background: var(--admin-border);
         }
         
         /* Lista de categorías para seleccionar */
@@ -146,6 +175,11 @@
         .card-resumen-saladette.por-vencer .numero { color: #f59e0b; }
         .card-resumen-saladette.criticos .numero { color: #ef4444; }
         .card-resumen-saladette.total .numero { color: #3b82f6; }
+
+        [data-theme="dark"] .card-resumen-saladette.activos .numero { color: var(--success); }
+        [data-theme="dark"] .card-resumen-saladette.por-vencer .numero { color: var(--warning); }
+        [data-theme="dark"] .card-resumen-saladette.criticos .numero { color: var(--danger); }
+        [data-theme="dark"] .card-resumen-saladette.total .numero { color: var(--primary); }
         
         /* Tabla de productos */
         .tabla-saladette-container {
@@ -224,6 +258,14 @@
         [data-theme="dark"] .tabla-saladette tr.vencido span[style*="color: #8b5cf6"] {
             color: #fce7f3 !important;
         }
+
+        [data-theme="dark"] .tabla-saladette td[style*="color: #6b7280"] {
+            color: var(--text-light) !important;
+        }
+
+        [data-theme="dark"] .tabla-saladette span[style*="color: #8b5cf6"] {
+            color: #c4b5fd !important;
+        }
         
         .tiempo-restante {
             font-family: monospace;
@@ -234,6 +276,10 @@
         .tiempo-advertencia { color: #f59e0b; }
         .tiempo-critico { color: #ef4444; animation: pulse 1s infinite; }
         .tiempo-vencido { color: #6b7280; text-decoration: line-through; }
+
+        [data-theme="dark"] .tiempo-normal { color: var(--success); }
+        [data-theme="dark"] .tiempo-advertencia { color: var(--warning); }
+        [data-theme="dark"] .tiempo-critico { color: var(--danger); }
 
         [data-theme="dark"] .tiempo-vencido {
             color: #f8fafc;
@@ -260,6 +306,16 @@
             background: #fecaca;
             transform: scale(1.1);
         }
+
+        [data-theme="dark"] .btn-consumir {
+            background: var(--danger-soft);
+            color: var(--danger-text);
+        }
+
+        [data-theme="dark"] .btn-consumir:hover:not(:disabled) {
+            background: var(--danger);
+            color: white;
+        }
         
         .btn-consumir:disabled {
             opacity: 0.4;
@@ -281,6 +337,16 @@
         .btn-eliminar-producto:hover {
             background: #d1d5db;
             color: #dc2626;
+        }
+
+        [data-theme="dark"] .btn-eliminar-producto {
+            background: var(--muted-control-bg);
+            color: var(--text-light);
+        }
+
+        [data-theme="dark"] .btn-eliminar-producto:hover {
+            background: var(--danger-soft);
+            color: var(--danger-text);
         }
         
         .lote-badge {
@@ -325,6 +391,12 @@
         .search-input {
             flex: 1;
             min-width: 200px;
+        }
+
+        [data-theme="dark"] #btn-limpiar-vencidos-saladette {
+            background: var(--warning-soft) !important;
+            color: var(--warning-text) !important;
+            border: 1px solid var(--admin-border) !important;
         }
     </style>
 </head>
@@ -793,7 +865,7 @@
         // ELIMINAR PRODUCTO (COMPLETAMENTE)
         // ==========================================
         
-        function eliminarProductoSaladette(id) {
+        async function eliminarProductoSaladette(id) {
             if (!esAdminActual()) {
                 mostrarNotificacion('Solo usuarios autorizados pueden eliminar registros de saladette', 'error');
                 return;
@@ -802,12 +874,21 @@
             const item = productosSaladette.find(p => p.id === id);
             if (!item) return;
             
-            if (confirm(`¿Eliminar "${item.productoNombre}" (${item.cantidad} unidades) del saladette?`)) {
-                productosSaladette = productosSaladette.filter(p => p.id !== id);
-                guardarSaladette();
-                renderizarTablaSaladette();
-                mostrarNotificacion(`Producto eliminado del saladette`, 'success');
-            }
+            const confirmado = await confirmarAccion(
+                `¿Eliminar "${item.productoNombre}" (${item.cantidad} unidades) del saladette?`,
+                {
+                    titulo: 'Eliminar producto',
+                    tipo: 'warning',
+                    textoAceptar: 'Eliminar'
+                }
+            );
+
+            if (!confirmado) return;
+
+            productosSaladette = productosSaladette.filter(p => p.id !== id);
+            guardarSaladette();
+            renderizarTablaSaladette();
+            mostrarNotificacion(`Producto eliminado del saladette`, 'success');
         }
         
         // ==========================================
@@ -942,7 +1023,7 @@
             container.innerHTML = html;
         }
         
-        function limpiarVencidosSaladette() {
+        async function limpiarVencidosSaladette() {
             if (!esAdminActual()) {
                 mostrarNotificacion('Solo usuarios autorizados pueden eliminar registros de saladette', 'error');
                 return;
@@ -954,12 +1035,21 @@
                 return;
             }
             
-            if (confirm(`¿Eliminar ${vencidos.length} productos vencidos del saladette?`)) {
-                productosSaladette = productosSaladette.filter(p => p.estado !== 'vencido');
-                guardarSaladette();
-                renderizarTablaSaladette();
-                mostrarNotificacion('Productos vencidos eliminados', 'success');
-            }
+            const confirmado = await confirmarAccion(
+                `¿Eliminar ${vencidos.length} productos vencidos del saladette?`,
+                {
+                    titulo: 'Eliminar vencidos',
+                    tipo: 'warning',
+                    textoAceptar: 'Eliminar'
+                }
+            );
+
+            if (!confirmado) return;
+
+            productosSaladette = productosSaladette.filter(p => p.estado !== 'vencido');
+            guardarSaladette();
+            renderizarTablaSaladette();
+            mostrarNotificacion('Productos vencidos eliminados', 'success');
         }
         
         function refrescarSaladette() {

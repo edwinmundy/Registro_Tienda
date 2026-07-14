@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -958,7 +958,7 @@
             mostrarNotificacion('Producto reactivado', 'success');
         }
 
-        function limpiarVencidos() {
+        async function limpiarVencidos() {
             const exhibicion = obtenerExhibicionActiva();
             const vencidos = exhibicion.filter(e => e.estado === 'vencido');
             if (vencidos.length === 0) {
@@ -966,7 +966,12 @@
                 return;
             }
             
-            if (!confirm(`¿Eliminar ${vencidos.length} productos vencidos?`)) return;
+            const confirmado = await confirmarAccion(`¿Eliminar ${vencidos.length} productos vencidos?`, {
+                titulo: 'Eliminar vencidos',
+                tipo: 'warning',
+                textoAceptar: 'Eliminar'
+            });
+            if (!confirmado) return;
             
             const nueva = exhibicion.filter(e => e.estado !== 'vencido');
             guardarExhibicionActiva(nueva);

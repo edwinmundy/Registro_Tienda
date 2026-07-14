@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -50,6 +50,11 @@
             box-shadow: var(--shadow);
         }
 
+        [data-theme="dark"] .category-option:hover,
+        [data-theme="dark"] .category-option.selected {
+            background: var(--primary-soft);
+        }
+
         .category-option .icon {
             font-size: 2rem;
             width: 48px;
@@ -59,6 +64,10 @@
             justify-content: center;
             background: white;
             border-radius: 10px;
+        }
+
+        [data-theme="dark"] .category-option .icon {
+            background: var(--muted-control-bg);
         }
 
         .category-option .info {
@@ -169,6 +178,10 @@
             background: #ecfdf5;
         }
 
+        [data-theme="dark"] .file-drop-zone.dragover {
+            background: var(--success-soft);
+        }
+
         .paste-zone {
             width: 100%;
             min-height: 200px;
@@ -252,6 +265,10 @@
             background: #eff6ff;
         }
 
+        [data-theme="dark"] .stock-input:focus {
+            background: var(--primary-soft);
+        }
+
         .diferencia-cell {
             font-weight: 700;
             font-size: 1.1rem;
@@ -296,6 +313,26 @@
         .estado-pendiente {
             background: #fef3c7;
             color: #92400e;
+        }
+
+        [data-theme="dark"] .estado-ok {
+            background: var(--success-soft);
+            color: var(--success-text);
+        }
+
+        [data-theme="dark"] .estado-ingresar {
+            background: var(--primary-soft);
+            color: var(--primary);
+        }
+
+        [data-theme="dark"] .estado-egresar {
+            background: var(--danger-soft);
+            color: var(--danger-text);
+        }
+
+        [data-theme="dark"] .estado-pendiente {
+            background: var(--warning-soft);
+            color: var(--warning-text);
         }
 
         /* Resumen cards */
@@ -380,6 +417,20 @@
             display: none;
         }
 
+        [data-theme="dark"] .match-info {
+            background: var(--success-panel);
+            border-left-color: var(--success);
+            color: var(--text);
+        }
+
+        [data-theme="dark"] .conteo-table [style*="color: #8b5cf6"] {
+            color: #c4b5fd !important;
+        }
+
+        [data-theme="dark"] .conteo-table [style*="color: #06b6d4"] {
+            color: #67e8f9 !important;
+        }
+
         .match-info.show {
             display: block;
         }
@@ -459,7 +510,7 @@
 }
 
 .force-save-btn:disabled {
-    background: #9ca3af;
+    background: var(--secondary);
     cursor: not-allowed;
     transform: none;
 }
@@ -481,15 +532,15 @@
 }
 
 .save-status.success {
-    background: #d1fae5;
-    color: #065f46;
-    border: 1px solid #10b981;
+    background: var(--success-soft);
+    color: var(--success-text);
+    border: 1px solid var(--success);
 }
 
 .save-status.error {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #ef4444;
+    background: var(--danger-soft);
+    color: var(--danger-text);
+    border: 1px solid var(--danger);
 }
 
 @keyframes pulse {
@@ -1012,12 +1063,21 @@
             document.getElementById('count-egresar').textContent = egresar;
         }
 
-        function guardarConteo() {
+        async function guardarConteo() {
             if (!verificarSesion()) return;
 
             const pendientes = conteoActual.filter(c => c.stockSistema === null || c.stockSistema === undefined).length;
             if (pendientes > 0) {
-                if (!confirm(`Faltan ${pendientes} productos por vincular con el Excel. ¿Deseas guardar igual?`)) {
+                const confirmado = await confirmarAccion(
+                    `Faltan ${pendientes} productos por vincular con el Excel.\n\n¿Deseas guardar igual?`,
+                    {
+                        titulo: 'Conteo incompleto',
+                        tipo: 'warning',
+                        textoAceptar: 'Guardar igual'
+                    }
+                );
+
+                if (!confirmado) {
                     return;
                 }
             }
@@ -1129,8 +1189,17 @@
             mostrarNotificacion('Excel exportado correctamente', 'success');
         }
 
-        function limpiarConteo() {
-            if (!confirm('¿Limpiar el conteo actual? Se perderán los datos no guardados.')) {
+        async function limpiarConteo() {
+            const confirmado = await confirmarAccion(
+                '¿Limpiar el conteo actual?\n\nSe perderán los datos no guardados.',
+                {
+                    titulo: 'Limpiar conteo',
+                    tipo: 'warning',
+                    textoAceptar: 'Limpiar'
+                }
+            );
+
+            if (!confirmado) {
                 return;
             }
 

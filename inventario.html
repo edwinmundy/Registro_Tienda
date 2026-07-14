@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -80,7 +80,7 @@
         cargarInventarioGeneral(tabInicial);
     });
 
-    function limpiarTodoInventario() {
+    async function limpiarTodoInventario() {
         if (!verificarSesion()) return;
         
         // Solo admin puede limpiar todo el inventario
@@ -90,12 +90,25 @@
             return;
         }
         
-        if (!confirm('⚠️ ¿ESTÁS SEGURO?\n\nEsto eliminará:\n✓ TODAS las categorías\n✓ TODOS los items\n✓ TODO el historial de auditoría\n✓ TODOS los conteos de cigarrillos\n✓ TODO el historial de conteos\n\nEsta acción NO se puede deshacer.\n\n¿Deseas continuar?')) {
+        const confirmado = await confirmarAccion(
+            '¿ESTÁS SEGURO?\n\nEsto eliminará:\n✓ TODAS las categorías\n✓ TODOS los items\n✓ TODO el historial de auditoría\n✓ TODOS los conteos de cigarrillos\n✓ TODO el historial de conteos\n\nEsta acción NO se puede deshacer.\n\n¿Deseas continuar?',
+            {
+                titulo: 'Limpiar inventario',
+                tipo: 'warning',
+                textoAceptar: 'Continuar'
+            }
+        );
+
+        if (!confirmado) {
             return;
         }
         
         // Segunda confirmación por seguridad
-        const confirmacion = prompt('Escribe "ELIMINAR" para confirmar:');
+        const confirmacion = await solicitarDato('Escribe "ELIMINAR" para confirmar:', '', {
+            titulo: 'Confirmación final',
+            tipo: 'error',
+            textoAceptar: 'Eliminar'
+        });
         if (confirmacion !== 'ELIMINAR') {
             mostrarNotificacion('Operación cancelada', 'warning');
             return;

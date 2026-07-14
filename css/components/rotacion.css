@@ -58,6 +58,10 @@
 }
 
 [data-theme="dark"] {
+    --color-warning: #FBBF24;
+    --color-danger: #F87171;
+    --color-vendido: #34D399;
+    --color-no-habilitado: #A7B4C8;
     --color-dona-light: #4a1627;
     --color-muffin-light: #113c3a;
     --color-croissant-light: #4a2b13;
@@ -726,6 +730,16 @@ body {
     box-shadow: 0 4px 12px rgba(230, 81, 0, 0.2);
 }
 
+[data-theme="dark"] .puerta-salida {
+    background: linear-gradient(180deg, var(--color-warning-light), #442706);
+    border-color: var(--color-warning);
+    color: var(--color-warning);
+}
+
+[data-theme="dark"] .puerta-salida:hover {
+    background: linear-gradient(180deg, #442706, var(--color-warning-light));
+}
+
 .puerta-entrada {
     background: linear-gradient(180deg, #E8F5E9, #C8E6C9);
     border: 2px solid #81C784;
@@ -739,6 +753,16 @@ body {
 .puerta-entrada:hover {
     background: linear-gradient(180deg, #C8E6C9, #A5D6A7);
     box-shadow: 0 4px 12px rgba(46, 125, 50, 0.2);
+}
+
+[data-theme="dark"] .puerta-entrada {
+    background: linear-gradient(180deg, var(--color-vendido-light), #0f3a2a);
+    border-color: var(--color-vendido);
+    color: var(--color-vendido);
+}
+
+[data-theme="dark"] .puerta-entrada:hover {
+    background: linear-gradient(180deg, #0f3a2a, var(--color-vendido-light));
 }
 
 .puerta-icono {
@@ -1496,6 +1520,15 @@ body {
 .badge-agregado { background: rgba(0, 114, 178, 0.1); color: var(--color-primary); }
 .badge-no_habilitado { background: #FFF3E0; color: #E65100; }
 
+[data-theme="dark"] .badge-agregado {
+    background: rgba(139, 124, 246, 0.18);
+}
+
+[data-theme="dark"] .badge-no_habilitado {
+    background: var(--color-warning-light);
+    color: var(--color-warning);
+}
+
 .historial-fecha {
     font-family: var(--font-mono);
     font-size: 12px;
@@ -1789,6 +1822,14 @@ body {
 
 .puerta-entrada .puerta-tipo {
     color: #2E7D32;
+}
+
+[data-theme="dark"] .puerta-salida .puerta-tipo {
+    color: var(--color-warning);
+}
+
+[data-theme="dark"] .puerta-entrada .puerta-tipo {
+    color: var(--color-vendido);
 }
 
 .multi-categoria-container {

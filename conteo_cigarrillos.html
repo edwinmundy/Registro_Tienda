@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -817,7 +817,7 @@
 
                 <!-- Importar por pegado -->
                 <div id="tab-paste" class="import-content">
-                    <textarea id="paste-zone" class="paste-zone" placeholder="Pega aquí los datos desde Excel...&#10;&#10;Formato esperado:&#10;Código | Producto | ... | Stock&#10;12345 | Cigarrillo X | ... | 50"></textarea>
+                    <textarea id="paste-zone" class="paste-zone" placeholder="Pega aquí los datos desde Excel...&#10;&#10;Formato esperado:&#10;A=Código | B=Producto | C=... | D=Stock&#10;12345 | Cigarrillo X | ... | 50"></textarea>
                     <button onclick="event.stopPropagation(); procesarDatosPegados()" class="btn-primary" style="margin-top: 12px; width: 100%;">
                         📋 Procesar Datos Pegados
                     </button>
@@ -1169,17 +1169,10 @@
         // Separar por tabulaciones o múltiples espacios
         const columnas = linea.split(/\t+/).map(c => c.trim());
 
-        if (columnas.length >= 3) {
+        if (columnas.length >= 4) {
             const codigo = columnas[0];
             const producto = columnas[1];
-            let stockSistema = 0;
-            for (let j = columnas.length - 1; j >= 2; j--) {
-                const val = parseInt(columnas[j]);
-                if (!isNaN(val)) {
-                    stockSistema = val;
-                    break;
-                }
-            }
+            const stockSistema = parseInt(columnas[3]) || 0;
 
             if (codigo && producto && codigo !== 'undefined') {
                 productosCigarrillos.push({
@@ -1886,8 +1879,17 @@
         }
 
         // Función para CAJEROS: Limpia conteo + datos importados (NO borra historial)
-        function limpiarConteoCajero() {
-            if (!confirm('¿Limpiar conteo?\n\nSe borrará:\n✓ Conteo en progreso\n✓ Datos importados\n\nNO se borra el historial de conteos guardados.')) {
+        async function limpiarConteoCajero() {
+            const confirmado = await confirmarAccion(
+                '¿Limpiar conteo?\n\nSe borrará:\n✓ Conteo en progreso\n✓ Datos importados\n\nNO se borra el historial de conteos guardados.',
+                {
+                    titulo: 'Limpiar conteo',
+                    tipo: 'warning',
+                    textoAceptar: 'Limpiar'
+                }
+            );
+
+            if (!confirmado) {
                 return;
             }
 
@@ -1911,8 +1913,17 @@
         }
 
         // Función para ADMIN: Limpia TODO (conteo + datos importados + historial)
-        function limpiarConteoAdmin() {
-            if (!confirm('⚠️ MODO ADMIN - ELIMINAR TODO\n\nEsto borrará:\n✓ Conteo en progreso\n✓ Datos importados\n✓ Historial de conteos guardados\n\n¿Continuar?')) {
+        async function limpiarConteoAdmin() {
+            const confirmado = await confirmarAccion(
+                'MODO ADMIN - ELIMINAR TODO\n\nEsto borrará:\n✓ Conteo en progreso\n✓ Datos importados\n✓ Historial de conteos guardados\n\n¿Continuar?',
+                {
+                    titulo: 'Eliminar datos de conteo',
+                    tipo: 'warning',
+                    textoAceptar: 'Eliminar todo'
+                }
+            );
+
+            if (!confirmado) {
                 return;
             }
 
@@ -1936,11 +1947,11 @@
         }
 
         // Función unificada que detecta el tipo de usuario
-        function limpiarConteo() {
+        async function limpiarConteo() {
             if (esAdmin) {
-                limpiarConteoAdmin();
+                await limpiarConteoAdmin();
             } else {
-                limpiarConteoCajero();
+                await limpiarConteoCajero();
             }
         }
 

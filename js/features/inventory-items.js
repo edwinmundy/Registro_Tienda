@@ -1,4 +1,4 @@
-﻿// ==========================================
+// ==========================================
 // FUNCIONES DE INVENTARIO (CRUD Items)
 // ==========================================
 
@@ -388,10 +388,15 @@ function guardarItem(event) {
     mostrarNotificacion(modo === 'editar' ? 'Item actualizado correctamente' : 'Item agregado correctamente', 'success');
 }
 
-function eliminarItem(id, categoria) {
+async function eliminarItem(id, categoria) {
     if (!verificarSesion()) return;
     
-    if (!confirm('¿Estás seguro de eliminar este item?')) return;
+    const confirmado = await confirmarAccion('¿Estás seguro de eliminar este item?', {
+        titulo: 'Eliminar item',
+        tipo: 'warning',
+        textoAceptar: 'Eliminar'
+    });
+    if (!confirmado) return;
     
     let items = obtenerDatos(categoria);
     const item = items.find(i => i.id === id);

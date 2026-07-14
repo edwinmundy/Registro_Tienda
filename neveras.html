@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -82,6 +82,10 @@
         .nevera-item.selected {
             background: #eff6ff;
             border-left: 4px solid var(--primary);
+        }
+
+        [data-theme="dark"] .nevera-item.selected {
+            background: var(--primary-soft);
         }
         
         .nevera-info h4 {
@@ -197,6 +201,21 @@
         .badge-normal { background: #d1fae5; color: #065f46; }
         .badge-alerta { background: #fef3c7; color: #92400e; }
         .badge-critico { background: #fee2e2; color: #991b1b; }
+
+        [data-theme="dark"] .badge-normal {
+            background: var(--success-soft);
+            color: var(--success-text);
+        }
+
+        [data-theme="dark"] .badge-alerta {
+            background: var(--warning-soft);
+            color: var(--warning-text);
+        }
+
+        [data-theme="dark"] .badge-critico {
+            background: var(--danger-soft);
+            color: var(--danger-text);
+        }
         
         /* Estadísticas */
         .stats-temperatura {
@@ -243,6 +262,11 @@
             font-size: 0.7rem;
             font-weight: 600;
             margin-left: 8px;
+        }
+
+        [data-theme="dark"] .admin-badge-nevera {
+            background: var(--warning-soft);
+            color: var(--warning-text);
         }
     </style>
 </head>
@@ -616,19 +640,41 @@
             }
         }
 
-        function editarNeveraPrompt(id) {
+        async function editarNeveraPrompt(id) {
             if (!esAdmin) return;
             
             const neveras = obtenerNeveras();
             const nevera = neveras.find(n => n.id === id);
             if (!nevera) return;
             
-            const nuevoNombre = prompt('Editar nombre:', nevera.nombre);
+            const nuevoNombre = await solicitarDato('Editar nombre:', nevera.nombre, {
+                titulo: 'Editar nevera',
+                tipo: 'info'
+            });
             if (nuevoNombre === null) return;
             
-            const nuevaUbicacion = prompt('Editar ubicación:', nevera.ubicacion || '');
-            const nuevaTempMin = parseFloat(prompt('Temperatura mínima (°C):', nevera.temperaturaMin));
-            const nuevaTempMax = parseFloat(prompt('Temperatura máxima (°C):', nevera.temperaturaMax));
+            const nuevaUbicacion = await solicitarDato('Editar ubicación:', nevera.ubicacion || '', {
+                titulo: 'Editar nevera',
+                tipo: 'info'
+            });
+            if (nuevaUbicacion === null) return;
+
+            const tempMinInput = await solicitarDato('Temperatura mínima (°C):', nevera.temperaturaMin, {
+                titulo: 'Editar nevera',
+                tipo: 'info',
+                inputTipo: 'number'
+            });
+            if (tempMinInput === null) return;
+
+            const tempMaxInput = await solicitarDato('Temperatura máxima (°C):', nevera.temperaturaMax, {
+                titulo: 'Editar nevera',
+                tipo: 'info',
+                inputTipo: 'number'
+            });
+            if (tempMaxInput === null) return;
+
+            const nuevaTempMin = parseFloat(tempMinInput);
+            const nuevaTempMax = parseFloat(tempMaxInput);
             
             if (isNaN(nuevaTempMin) || isNaN(nuevaTempMax)) {
                 mostrarNotificacion('Temperaturas inválidas', 'error');
@@ -644,7 +690,7 @@
             }
         }
 
-        function eliminarNeveraConfirm(id) {
+        async function eliminarNeveraConfirm(id) {
             if (!esAdmin) return;
             
             const neveras = obtenerNeveras();
@@ -652,21 +698,30 @@
             
             if (!nevera) return;
             
-            if (confirm(`¿Eliminar la nevera "${nevera.nombre}"?\n\nSe eliminarán TODOS los registros de temperatura asociados.`)) {
-                if (eliminarNevera(id)) {
-                    mostrarNotificacion(`Nevera "${nevera.nombre}" eliminada`, 'success');
-                    
-                    if (neveraSeleccionada && neveraSeleccionada.id === id) {
-                        neveraSeleccionada = null;
-                        document.getElementById('empty-selection').style.display = 'block';
-                        document.getElementById('form-registro-container').style.display = 'none';
-                        document.getElementById('tabla-container').style.display = 'none';
-                        document.getElementById('stats-container').style.display = 'none';
-                        document.getElementById('nevera-titulo').innerHTML = '📋 Selecciona una nevera';
-                    }
-                    
-                    cargarListaNeveras();
+            const confirmado = await confirmarAccion(
+                `¿Eliminar la nevera "${nevera.nombre}"?\n\nSe eliminarán TODOS los registros de temperatura asociados.`,
+                {
+                    titulo: 'Eliminar nevera',
+                    tipo: 'warning',
+                    textoAceptar: 'Eliminar'
                 }
+            );
+
+            if (!confirmado) return;
+
+            if (eliminarNevera(id)) {
+                mostrarNotificacion(`Nevera "${nevera.nombre}" eliminada`, 'success');
+                
+                if (neveraSeleccionada && neveraSeleccionada.id === id) {
+                    neveraSeleccionada = null;
+                    document.getElementById('empty-selection').style.display = 'block';
+                    document.getElementById('form-registro-container').style.display = 'none';
+                    document.getElementById('tabla-container').style.display = 'none';
+                    document.getElementById('stats-container').style.display = 'none';
+                    document.getElementById('nevera-titulo').innerHTML = '📋 Selecciona una nevera';
+                }
+                
+                cargarListaNeveras();
             }
         }
     </script>

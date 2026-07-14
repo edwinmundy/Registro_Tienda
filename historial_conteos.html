@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -392,7 +392,7 @@
 }
 
 .force-save-btn:disabled {
-    background: #9ca3af;
+    background: var(--secondary);
     cursor: not-allowed;
     transform: none;
 }
@@ -414,15 +414,15 @@
 }
 
 .save-status.success {
-    background: #d1fae5;
-    color: #065f46;
-    border: 1px solid #10b981;
+    background: var(--success-soft);
+    color: var(--success-text);
+    border: 1px solid var(--success);
 }
 
 .save-status.error {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #ef4444;
+    background: var(--danger-soft);
+    color: var(--danger-text);
+    border: 1px solid var(--danger);
 }
 
 .historial-capture-sheet {
@@ -550,6 +550,21 @@
     background: var(--bg) !important;
     border-color: var(--border) !important;
     color: var(--text) !important;
+}
+
+[data-theme="dark"] .detalle-table .col-bodega,
+[data-theme="dark"] #detalle-conteo [style*="color: #8b5cf6"] {
+    color: #c4b5fd !important;
+}
+
+[data-theme="dark"] .detalle-table .col-exhibicion,
+[data-theme="dark"] #detalle-conteo [style*="color: #0891b2"] {
+    color: #67e8f9 !important;
+}
+
+[data-theme="dark"] .detalle-table .col-total,
+[data-theme="dark"] #detalle-conteo [style*="color: #2563eb"] {
+    color: #93c5fd !important;
 }
 
 [data-theme="dark"] #detalle-conteo > div[style] {
@@ -763,7 +778,7 @@
             }).join('');
         }
 
-        function eliminarConteo(id) {
+        async function eliminarConteo(id) {
             if (!esAdmin) {
                 mostrarNotificacion('Solo el administrador puede eliminar conteos', 'error');
                 return;
@@ -779,7 +794,16 @@
 
             const fecha = new Date(conteo.fechaFin || conteo.fecha).toLocaleString('es-ES');
             
-            if (!confirm(`⚠️ ¿Eliminar este conteo permanentemente?\n\n📅 Fecha: ${fecha}\n👤 Cajero: ${conteo.cajeroNombre}\n📦 Productos: ${conteo.productos?.length || 0}\n\nEsta acción no se puede deshacer.`)) {
+            const confirmado = await confirmarAccion(
+                `¿Eliminar este conteo permanentemente?\n\nFecha: ${fecha}\nCajero: ${conteo.cajeroNombre}\nProductos: ${conteo.productos?.length || 0}\n\nEsta acción no se puede deshacer.`,
+                {
+                    titulo: 'Eliminar conteo',
+                    tipo: 'warning',
+                    textoAceptar: 'Eliminar'
+                }
+            );
+
+            if (!confirmado) {
                 return;
             }
 

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -57,7 +57,7 @@
 }
 
 .force-save-btn:disabled {
-    background: #9ca3af;
+    background: var(--secondary);
     cursor: not-allowed;
     transform: none;
 }
@@ -79,15 +79,15 @@
 }
 
 .save-status.success {
-    background: #d1fae5;
-    color: #065f46;
-    border: 1px solid #10b981;
+    background: var(--success-soft);
+    color: var(--success-text);
+    border: 1px solid var(--success);
 }
 
 .save-status.error {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #ef4444;
+    background: var(--danger-soft);
+    color: var(--danger-text);
+    border: 1px solid var(--danger);
 }
 
 @keyframes pulse {

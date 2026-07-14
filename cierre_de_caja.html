@@ -242,6 +242,116 @@
             flex-wrap: wrap;
         }
 
+        .capture-notification {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            z-index: 1200;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            border-radius: 8px;
+            background: var(--success);
+            color: white;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .capture-notification.show {
+            display: flex;
+        }
+
+        .cierre-capture-sheet {
+            position: fixed;
+            left: -99999px;
+            top: 0;
+            width: 1200px;
+            background: #ffffff;
+            color: #111827;
+            padding: 32px;
+            font-family: "Segoe UI", Arial, sans-serif;
+            line-height: 1.35;
+        }
+
+        .cierre-capture-sheet h1 {
+            margin: 0 0 6px;
+            color: #111827;
+            font-size: 30px;
+        }
+
+        .cierre-capture-sheet h2 {
+            margin: 24px 0 10px;
+            color: #111827;
+            font-size: 20px;
+        }
+
+        .cierre-capture-subtitle {
+            color: #374151;
+            font-size: 16px;
+            margin-bottom: 18px;
+        }
+
+        .cierre-capture-meta,
+        .cierre-capture-summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .cierre-capture-meta div,
+        .cierre-capture-summary div {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 12px;
+            background: #f9fafb;
+        }
+
+        .cierre-capture-meta span,
+        .cierre-capture-summary span {
+            display: block;
+            color: #6b7280;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .cierre-capture-meta strong,
+        .cierre-capture-summary strong {
+            display: block;
+            margin-top: 4px;
+            color: #111827;
+            font-size: 18px;
+        }
+
+        .cierre-capture-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .cierre-capture-table th {
+            background: #e5e7eb;
+            color: #374151;
+            padding: 10px;
+            text-align: left;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        .cierre-capture-table td {
+            border-bottom: 1px solid #e5e7eb;
+            padding: 9px 10px;
+            color: #111827;
+        }
+
+        .cierre-capture-table .capture-edit-row td {
+            background: #fef3c7;
+            color: #92400e;
+            font-weight: 700;
+        }
+
         @media (max-width: 1100px) {
             .method-actions-grid {
                 grid-template-columns: repeat(2, minmax(180px, 1fr));
@@ -302,6 +412,7 @@
                         <strong id="total-to-collect">$0.-</strong>
                     </div>
                     <div class="form-actions">
+                        <button type="button" class="btn-export" id="capture-image-btn">Generar imagen legible</button>
                         <button type="button" class="btn-export" id="export-xlsx-btn">Descargar XLSX</button>
                         <button type="button" class="btn-secondary" id="clear-session-btn">Limpiar formulario</button>
                     </div>
@@ -449,6 +560,15 @@
         </form>
     </div>
 
+    <div id="capture-notification-cierre" class="capture-notification">
+        <span style="font-size: 1.4rem;">OK</span>
+        <div>
+            <strong>Imagen lista</strong><br>
+            <small>Se descargó en alta resolución para enviarla por WhatsApp.</small>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="js/core/config.js"></script>
     <script src="js/core/utils.js"></script>
@@ -486,6 +606,15 @@
             return `${sign}$${Math.abs(Math.round(amount)).toLocaleString('es-CL')}.-`;
         }
 
+        function escapeHtml(value) {
+            return String(value === null || value === undefined ? '' : value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         function parseAmount(value) {
             const cleanValue = String(value || '').replace(/[^\d]/g, '');
             return Number.parseInt(cleanValue, 10);
@@ -506,6 +635,15 @@
             return records
                 .filter(record => record.type === 'cash')
                 .reduce((sum, record) => sum + record.amount, 0);
+        }
+
+        function getPaymentTotals(records) {
+            return Object.keys(paymentMethods).reduce((totals, method) => {
+                totals[method] = records
+                    .filter(record => record.type === 'payment' && record.method === method)
+                    .reduce((sum, record) => sum + record.amount, 0);
+                return totals;
+            }, {});
         }
 
         function getCashRows(records) {
@@ -859,13 +997,11 @@
         }
 
         function renderTotals(records) {
-            Object.keys(paymentMethods).forEach(method => {
-                const total = records
-                    .filter(record => record.type === 'payment' && record.method === method)
-                    .reduce((sum, record) => sum + record.amount, 0);
+            const paymentTotals = getPaymentTotals(records);
 
+            Object.keys(paymentMethods).forEach(method => {
                 const totalId = method === 'rappi' ? 'total-rappi' : `total-${method}`;
-                document.getElementById(totalId).textContent = formatMoney(total);
+                document.getElementById(totalId).textContent = formatMoney(paymentTotals[method] || 0);
             });
 
             const cashTotal = getCashTotal(records);
@@ -939,12 +1075,7 @@
 
             const cashTotal = getCashTotal(records);
             const fundAmount = getCashFundAmount();
-            const paymentTotals = Object.keys(paymentMethods).reduce((totals, method) => {
-                totals[method] = records
-                    .filter(record => record.type === 'payment' && record.method === method)
-                    .reduce((sum, record) => sum + record.amount, 0);
-                return totals;
-            }, {});
+            const paymentTotals = getPaymentTotals(records);
 
             const registerRows = [...records]
                 .sort((a, b) => new Date(a.fechaISO) - new Date(b.fechaISO))
@@ -987,6 +1118,146 @@
             const fecha = new Date().toISOString().slice(0, 10);
             XLSX.writeFile(wb, `cierre_de_caja_${fecha}.xlsx`);
             mostrarNotificacion('Registro descargado en Excel', 'success');
+        }
+
+        function buildCaptureSheet() {
+            const records = getCurrentSessionRecords();
+            const paymentTotals = getPaymentTotals(records);
+            const cashTotal = getCashTotal(records);
+            const fundAmount = getCashFundAmount();
+            const cashRows = getCashRows(records);
+            const sortedRecords = [...records].sort((a, b) => new Date(a.fechaISO) - new Date(b.fechaISO));
+            const sheet = document.createElement('div');
+            const sessionId = getActiveSessionId();
+
+            sheet.className = 'cierre-capture-sheet';
+            sheet.innerHTML = `
+                <h1>Cierre de caja</h1>
+                <div class="cierre-capture-subtitle">Cuadratura generada para revisión y envío</div>
+                <div class="cierre-capture-meta">
+                    <div><span>Usuario</span><strong>${escapeHtml(getCurrentUserName())}</strong></div>
+                    <div><span>Fecha</span><strong>${escapeHtml(new Date().toLocaleString('es-CL'))}</strong></div>
+                    <div><span>Cierre</span><strong>#${escapeHtml(sessionId.slice(-6))}</strong></div>
+                    <div><span>Registros</span><strong>${records.length}</strong></div>
+                </div>
+                <div class="cierre-capture-summary">
+                    <div><span>Amipass</span><strong>${formatMoney(paymentTotals.amipass || 0)}</strong></div>
+                    <div><span>Uber</span><strong>${formatMoney(paymentTotals.uber || 0)}</strong></div>
+                    <div><span>Rappi-PddYa</span><strong>${formatMoney(paymentTotals.rappi || 0)}</strong></div>
+                    <div><span>Total efectivo</span><strong>${formatMoney(cashTotal)}</strong></div>
+                    <div><span>Fondo de caja</span><strong>${formatMoney(fundAmount)}</strong></div>
+                    <div><span>Total a recaudar</span><strong>${formatSignedMoney(cashTotal - fundAmount)}</strong></div>
+                </div>
+                <h2>Efectivo</h2>
+                <table class="cierre-capture-table">
+                    <thead>
+                        <tr>
+                            <th>Denominacion</th>
+                            <th>Cantidad</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${cashRows.map(row => `
+                            <tr>
+                                <td>${row.denomination.toLocaleString('es-CL')}</td>
+                                <td>${row.quantity}</td>
+                                <td>${formatMoney(row.total)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <h2>Registro</h2>
+                <table class="cierre-capture-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha y hora</th>
+                            <th>Registro</th>
+                            <th>Monto</th>
+                            <th>Usuario</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sortedRecords.length === 0 ? `
+                            <tr><td colspan="4">Sin registros en la sesion actual</td></tr>
+                        ` : sortedRecords.map(record => `
+                            <tr class="${record.type === 'edit' ? 'capture-edit-row' : ''}">
+                                <td>${escapeHtml(record.fechaLocal)}</td>
+                                <td>${escapeHtml(getRecordDetail(record))}</td>
+                                <td>${escapeHtml(getRecordAmountDisplay(record))}</td>
+                                <td>${escapeHtml(getUserLabel(record))}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.body.appendChild(sheet);
+            return sheet;
+        }
+
+        async function captureCashCloseImage() {
+            const btn = document.getElementById('capture-image-btn');
+            const notification = document.getElementById('capture-notification-cierre');
+
+            if (typeof html2canvas !== 'function') {
+                mostrarNotificacion('No se pudo cargar el generador de imagen', 'error');
+                return;
+            }
+
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Generando...';
+            const sheet = buildCaptureSheet();
+
+            try {
+                const sheetWidth = Math.ceil(sheet.scrollWidth);
+                const sheetHeight = Math.ceil(sheet.scrollHeight);
+                const scale = Math.max(1, Math.min(3, 28000 / Math.max(sheetHeight, 1)));
+                const canvas = await html2canvas(sheet, {
+                    scale,
+                    backgroundColor: '#ffffff',
+                    useCORS: true,
+                    logging: false,
+                    windowWidth: sheetWidth + 120,
+                    windowHeight: sheetHeight + 120,
+                    width: sheetWidth,
+                    height: sheetHeight
+                });
+
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png', 1));
+                if (!blob) {
+                    throw new Error('No se pudo crear la imagen PNG');
+                }
+
+                const date = new Date().toISOString().slice(0, 10);
+                const link = document.createElement('a');
+                const objectUrl = URL.createObjectURL(blob);
+
+                link.download = `cuadratura_cierre_de_caja_${date}.png`;
+                link.href = objectUrl;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+
+                try {
+                    if (navigator.clipboard && window.ClipboardItem) {
+                        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                    }
+                } catch (clipboardError) {
+                    console.warn('No se pudo copiar la imagen al portapapeles:', clipboardError);
+                }
+
+                notification.classList.add('show');
+                setTimeout(() => notification.classList.remove('show'), 3500);
+            } catch (error) {
+                console.error('Error al generar imagen de cierre:', error);
+                mostrarNotificacion('Error al generar la imagen', 'error');
+            } finally {
+                sheet.remove();
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
         }
 
         function renderHistory(records) {
@@ -1049,6 +1320,7 @@
             document.getElementById('edit-cancel').addEventListener('click', closeEditModal);
             document.getElementById('clear-session-btn').addEventListener('click', clearCurrentSession);
             document.getElementById('export-xlsx-btn').addEventListener('click', exportCurrentRegisterXlsx);
+            document.getElementById('capture-image-btn').addEventListener('click', captureCashCloseImage);
             document.getElementById('cash-fund-input').addEventListener('change', updateCashFundFromInput);
             document.getElementById('cash-fund-input').addEventListener('blur', updateCashFundFromInput);
             document.getElementById('cash-fund-input').addEventListener('focus', event => event.target.select());

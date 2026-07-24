@@ -157,6 +157,23 @@
             color: white;
         }
 
+        .cash-quantity-input {
+            width: 92px;
+            max-width: 100%;
+            padding: 8px 10px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .cash-quantity-input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px var(--primary-soft);
+        }
+
         .empty-cell {
             color: var(--text-light);
             font-style: italic;
@@ -620,6 +637,11 @@
             return Number.parseInt(cleanValue, 10);
         }
 
+        function parseCashQuantity(value) {
+            const quantity = Number(String(value || '').trim());
+            return Number.isInteger(quantity) && quantity >= 0 ? quantity : Number.NaN;
+        }
+
         function getCashFundAmount() {
             const storedValue = Number.parseInt(localStorage.getItem(CIERRE_FONDO_CAJA_KEY), 10);
             return Number.isFinite(storedValue) ? storedValue : DEFAULT_FONDO_CAJA;
@@ -648,8 +670,9 @@
 
         function getCashRows(records) {
             return denominations.map(denomination => {
-                const quantity = records
-                    .filter(record => record.type === 'cash' && record.denomination === denomination)
+                const denominationRecords = records
+                    .filter(record => record.type === 'cash' && record.denomination === denomination);
+                const quantity = denominationRecords
                     .reduce((sum, record) => sum + record.quantity, 0);
 
                 return {
@@ -658,6 +681,10 @@
                     total: denomination * quantity
                 };
             });
+        }
+
+        function getVisibleRegisterRecords(records) {
+            return records.filter(record => !(record.type === 'cash' && (record.quantity || 0) === 0));
         }
 
         function getRecords() {
@@ -826,6 +853,101 @@
             document.getElementById('edit-modal').classList.remove('open');
             document.getElementById('edit-modal').setAttribute('aria-hidden', 'true');
             currentEditRecordId = null;
+        }
+
+        function saveCashQuantityChange(denomination, newQuantity) {
+            const records = getRecords();
+            const sessionId = getActiveSessionId();
+            const cashIndexes = records.reduce((indexes, record, index) => {
+                if (record.sessionId === sessionId && record.type === 'cash' && record.denomination === denomination) {
+                    indexes.push(index);
+                }
+
+                return indexes;
+            }, []);
+            const oldQuantity = cashIndexes.reduce((sum, index) => sum + (records[index].quantity || 0), 0);
+
+            if (newQuantity === oldQuantity) {
+                return false;
+            }
+
+            const oldAmount = denomination * oldQuantity;
+            const newAmount = denomination * newQuantity;
+            const editedAtISO = new Date().toISOString();
+            let targetId = `efectivo-${denomination}`;
+
+            if (cashIndexes.length === 0 && newQuantity > 0) {
+                const newRecord = buildRecord({
+                    type: 'cash',
+                    label: 'Efectivo',
+                    denomination,
+                    quantity: newQuantity,
+                    amount: newAmount,
+                    edited: true,
+                    editedAtISO
+                });
+
+                records.push(newRecord);
+                targetId = newRecord.id;
+            } else if (cashIndexes.length === 0) {
+                return false;
+            } else {
+                const primaryIndex = cashIndexes[0];
+                targetId = records[primaryIndex].id;
+
+                cashIndexes.forEach((recordIndex, index) => {
+                    const quantity = index === 0 ? newQuantity : 0;
+                    records[recordIndex] = {
+                        ...records[recordIndex],
+                        quantity,
+                        amount: denomination * quantity,
+                        edited: true,
+                        editedAtISO
+                    };
+                });
+            }
+
+            records.push(buildRecord({
+                type: 'edit',
+                label: 'Edicion',
+                targetId,
+                targetLabel: `Efectivo: ${denomination.toLocaleString('es-CL')} x ${oldQuantity}`,
+                editedRecordType: 'cash',
+                oldAmount,
+                newAmount,
+                oldQuantity,
+                newQuantity,
+                amount: 0
+            }));
+
+            saveRecords(records);
+            renderCierreCaja();
+            return true;
+        }
+
+        function updateCashQuantityFromInput(input) {
+            const denomination = Number(input.dataset.denomination);
+            const previousQuantity = Number(input.dataset.previousQuantity);
+            const newQuantity = parseCashQuantity(input.value);
+
+            if (!Number.isFinite(newQuantity)) {
+                input.value = previousQuantity;
+                mostrarNotificacion('Ingresa una cantidad valida', 'error');
+                return;
+            }
+
+            if (saveCashQuantityChange(denomination, newQuantity)) {
+                mostrarNotificacion('Cantidad de efectivo actualizada', 'success');
+            } else {
+                input.value = previousQuantity;
+            }
+        }
+
+        function handleCashQuantityKeydown(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                event.target.blur();
+            }
         }
 
         function registerEdit(event) {
@@ -1053,7 +1175,20 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${rowData.denomination.toLocaleString('es-CL')}</td>
-                    <td>${rowData.quantity}</td>
+                    <td>
+                        <input
+                            class="cash-quantity-input"
+                            type="number"
+                            min="0"
+                            step="1"
+                            inputmode="numeric"
+                            value="${rowData.quantity}"
+                            data-denomination="${rowData.denomination}"
+                            data-previous-quantity="${rowData.quantity}"
+                            onchange="updateCashQuantityFromInput(this)"
+                            onkeydown="handleCashQuantityKeydown(event)"
+                        >
+                    </td>
                     <td>${formatMoney(rowData.total)}</td>
                 `;
                 tbody.appendChild(row);
@@ -1077,7 +1212,7 @@
             const fundAmount = getCashFundAmount();
             const paymentTotals = getPaymentTotals(records);
 
-            const registerRows = [...records]
+            const registerRows = getVisibleRegisterRecords(records)
                 .sort((a, b) => new Date(a.fechaISO) - new Date(b.fechaISO))
                 .map(record => ({
                     'Fecha y hora': record.fechaLocal,
@@ -1126,7 +1261,7 @@
             const cashTotal = getCashTotal(records);
             const fundAmount = getCashFundAmount();
             const cashRows = getCashRows(records);
-            const sortedRecords = [...records].sort((a, b) => new Date(a.fechaISO) - new Date(b.fechaISO));
+            const sortedRecords = getVisibleRegisterRecords(records).sort((a, b) => new Date(a.fechaISO) - new Date(b.fechaISO));
             const sheet = document.createElement('div');
             const sessionId = getActiveSessionId();
 
@@ -1262,7 +1397,7 @@
 
         function renderHistory(records) {
             const tbody = document.getElementById('history-table-body');
-            const sortedRecords = [...records].sort((a, b) => new Date(b.fechaISO) - new Date(a.fechaISO));
+            const sortedRecords = getVisibleRegisterRecords(records).sort((a, b) => new Date(b.fechaISO) - new Date(a.fechaISO));
 
             tbody.innerHTML = '';
 
@@ -1280,7 +1415,9 @@
                 const row = document.createElement('tr');
                 const action = record.type === 'edit'
                     ? 'Destacada'
-                    : `<button type="button" class="btn-edit-record" onclick="openEditModal('${record.id}')">Editar</button>`;
+                    : record.type === 'cash'
+                        ? 'Editar en tabla'
+                        : `<button type="button" class="btn-edit-record" onclick="openEditModal('${record.id}')">Editar</button>`;
 
                 if (record.type === 'edit') {
                     row.className = 'edit-log-row';

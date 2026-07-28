@@ -26,6 +26,7 @@ function obtenerArrayStorage(key) {
 
 const STORAGE_KEYS_RECORTABLES = [
     { key: 'inventario_historial_conteos', minimo: 10 },
+    { key: 'inventario_registro_cafe', minimo: 100 },
     { key: 'historial_conteos', minimo: 10 },
     { key: 'rotacion_panaderia_historial_v5', minimo: 100 },
     { key: 'inventario_auditoria', minimo: 100 },

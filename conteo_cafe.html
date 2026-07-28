@@ -237,7 +237,9 @@
                             <tr>
                                 <th>Onzas</th>
                                 <th>Tipo de café</th>
-                                <th>Cantidad</th>
+                                <th>#1</th>
+                                <th>#2</th>
+                                <th>#3</th>
                                 <th>Registro</th>
                             </tr>
                         </thead>
@@ -261,7 +263,9 @@
                                 <th>Fecha</th>
                                 <th>Onzas</th>
                                 <th>Tipo de café</th>
-                                <th>Cantidad</th>
+                                <th>#1</th>
+                                <th>#2</th>
+                                <th>#3</th>
                             </tr>
                         </thead>
                         <tbody id="registro-table-body"></tbody>
@@ -279,6 +283,7 @@
     <script src="js/core/init.js"></script>
     <script>
         const STORAGE_REGISTRO_CAFE = 'inventario_registro_cafe';
+        const COLUMNAS_CAFE = ['1', '2', '3'];
 
         const gruposCafe = [
             {
@@ -337,8 +342,8 @@
             }
         ];
 
-        function crearIdCafe(onzas, cafe) {
-            return `${onzas}-${cafe}`.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+        function crearIdCafe(onzas, cafe, columna) {
+            return `${onzas}-${cafe}-${columna}`.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
         }
 
         function obtenerRegistrosCafe() {
@@ -368,9 +373,27 @@
             input.value = Number.isFinite(cantidad) && cantidad > 0 ? cantidad : 0;
         }
 
-        function registrarCafe(onzas, cafe, inputId) {
-            const cantidad = cantidadInput(inputId);
-            if (cantidad <= 0) {
+        function obtenerCantidadesCafe(onzas, cafe) {
+            return COLUMNAS_CAFE.reduce((cantidades, columna) => {
+                cantidades[columna] = cantidadInput(crearIdCafe(onzas, cafe, columna));
+                return cantidades;
+            }, {});
+        }
+
+        function obtenerTotalCantidades(cantidades) {
+            return COLUMNAS_CAFE.reduce((total, columna) => total + (cantidades[columna] || 0), 0);
+        }
+
+        function limpiarCantidadesCafe(onzas, cafe) {
+            COLUMNAS_CAFE.forEach(columna => {
+                fijarCantidad(crearIdCafe(onzas, cafe, columna), 0);
+            });
+        }
+
+        function registrarCafe(onzas, cafe) {
+            const cantidades = obtenerCantidadesCafe(onzas, cafe);
+            const total = obtenerTotalCantidades(cantidades);
+            if (total <= 0) {
                 alert('Ingresa una cantidad mayor a 0 para registrar.');
                 return;
             }
@@ -380,11 +403,12 @@
                 fecha: new Date().toLocaleString('es-CL'),
                 onzas,
                 cafe,
-                cantidad
+                cantidades,
+                cantidad: total
             });
 
             guardarRegistrosCafe(registros);
-            fijarCantidad(inputId, 0);
+            limpiarCantidadesCafe(onzas, cafe);
             renderRegistroCafe();
         }
 
@@ -393,16 +417,17 @@
 
             gruposCafe.forEach(grupo => {
                 grupo.cafes.forEach(cafe => {
-                    const inputId = crearIdCafe(grupo.onzas, cafe);
-                    const cantidad = cantidadInput(inputId);
-                    if (cantidad > 0) {
+                    const cantidades = obtenerCantidadesCafe(grupo.onzas, cafe);
+                    const total = obtenerTotalCantidades(cantidades);
+                    if (total > 0) {
                         nuevosRegistros.push({
                             fecha: new Date().toLocaleString('es-CL'),
                             onzas: grupo.onzas,
                             cafe,
-                            cantidad
+                            cantidades,
+                            cantidad: total
                         });
-                        fijarCantidad(inputId, 0);
+                        limpiarCantidadesCafe(grupo.onzas, cafe);
                     }
                 });
             });
@@ -432,30 +457,45 @@
             const tbody = document.getElementById('coffee-table-body');
             tbody.innerHTML = gruposCafe.map(grupo => {
                 return grupo.cafes.map((cafe, index) => {
-                    const inputId = crearIdCafe(grupo.onzas, cafe);
                     const ounceCell = index === 0
                         ? `<td class="ounce-cell" rowspan="${grupo.cafes.length}">${grupo.onzas}</td>`
                         : '';
                     const startClass = index === 0 ? 'group-start' : '';
+                    const cantidadCells = COLUMNAS_CAFE.map(columna => {
+                        const inputId = crearIdCafe(grupo.onzas, cafe, columna);
+                        return `
+                            <td>
+                                <div class="qty-control">
+                                    <button class="qty-btn minus" type="button" onclick="cambiarCantidad('${inputId}', -1)" aria-label="Restar ${cafe} ${grupo.onzas} #${columna}">-</button>
+                                    <input class="qty-input" id="${inputId}" type="number" min="0" step="1" value="0" inputmode="numeric" onchange="normalizarCantidad(this)">
+                                    <button class="qty-btn" type="button" onclick="cambiarCantidad('${inputId}', 1)" aria-label="Sumar ${cafe} ${grupo.onzas} #${columna}">+</button>
+                                </div>
+                            </td>
+                        `;
+                    }).join('');
 
                     return `
                         <tr class="${grupo.clase} ${startClass}">
                             ${ounceCell}
                             <td class="coffee-name">${cafe}</td>
+                            ${cantidadCells}
                             <td>
-                                <div class="qty-control">
-                                    <button class="qty-btn minus" type="button" onclick="cambiarCantidad('${inputId}', -1)" aria-label="Restar ${cafe} ${grupo.onzas}">-</button>
-                                    <input class="qty-input" id="${inputId}" type="number" min="0" step="1" value="0" inputmode="numeric" onchange="normalizarCantidad(this)">
-                                    <button class="qty-btn" type="button" onclick="cambiarCantidad('${inputId}', 1)" aria-label="Sumar ${cafe} ${grupo.onzas}">+</button>
-                                </div>
-                            </td>
-                            <td>
-                                <button class="row-register" type="button" onclick="registrarCafe('${grupo.onzas}', '${cafe}', '${inputId}')">Guardar</button>
+                                <button class="row-register" type="button" onclick="registrarCafe('${grupo.onzas}', '${cafe}')">Guardar</button>
                             </td>
                         </tr>
                     `;
                 }).join('');
             }).join('');
+        }
+
+        function obtenerCantidadRegistro(registro, columna) {
+            if (registro.cantidades && Number.isFinite(Number(registro.cantidades[columna]))) {
+                return Number(registro.cantidades[columna]);
+            }
+
+            return columna === '1' && Number.isFinite(Number(registro.cantidad))
+                ? Number(registro.cantidad)
+                : 0;
         }
 
         function renderRegistroCafe() {
@@ -465,7 +505,7 @@
             if (registros.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td class="registro-empty" colspan="4">Sin registros guardados</td>
+                        <td class="registro-empty" colspan="6">Sin registros guardados</td>
                     </tr>
                 `;
                 return;
@@ -476,7 +516,9 @@
                     <td>${registro.fecha}</td>
                     <td>${registro.onzas}</td>
                     <td class="coffee-name">${registro.cafe}</td>
-                    <td><span class="registro-total">${registro.cantidad}</span></td>
+                    <td><span class="registro-total">${obtenerCantidadRegistro(registro, '1')}</span></td>
+                    <td><span class="registro-total">${obtenerCantidadRegistro(registro, '2')}</span></td>
+                    <td><span class="registro-total">${obtenerCantidadRegistro(registro, '3')}</span></td>
                 </tr>
             `).join('');
         }

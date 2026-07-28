@@ -151,6 +151,7 @@ function actualizarNavegacion() {
     
     const esPaginaCategoria = paginaActual === 'categoria.html' && categoriaActual;
     const esConteoCategoria = paginaActual === 'conteo_categoria.html';
+    const esConteoCafe = paginaActual === 'conteo_cafe.html';
     const esAdmin = esAdminActual();
     const linksAdmin = esAdmin ? `
                 <a href="auditoria.html" class="nav-btn ${paginaActual === 'auditoria.html' ? 'active' : ''}">📋 Auditoría</a>
@@ -169,6 +170,7 @@ function actualizarNavegacion() {
                 <a href="conteo_cigarrillos.html" class="nav-btn ${paginaActual === 'conteo_cigarrillos.html' ? 'active' : ''}">🚬 Cigarrillos</a>
                 <a href="historial_conteos.html" class="nav-btn ${paginaActual === 'historial_conteos.html' ? 'active' : ''}">📜 Hist. Cigarrillos</a>
                 <a href="conteo_categoria.html" class="nav-btn ${esConteoCategoria ? 'active' : ''}">📊 Conteo Cat.</a>
+                <a href="conteo_cafe.html" class="nav-btn ${esConteoCafe ? 'active' : ''}">☕ Café</a>
                 <a href="cajeros.html" class="nav-btn ${paginaActual === 'cajeros.html' ? 'active' : ''}">👤 Cajeros</a>
                 <a href="rotacion.html" class="nav-btn ${paginaActual === 'rotacion.html' ? 'active' : ''}">🧁 Rotación</a>
                 <a href="neveras.html" class="nav-btn ${paginaActual === 'neveras.html' ? 'active' : ''}">🌡️ Neveras</a>

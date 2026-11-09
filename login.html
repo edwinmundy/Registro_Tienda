@@ -11,10 +11,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #0072b2 0%, #56b4e9 100%);
             position: relative;
         }
-        [data-theme="dark"] .login-container {
+        :root .login-container {
             background: linear-gradient(135deg, #0f172a 0%, #312e81 100%);
         }
         .login-box {
@@ -25,16 +24,6 @@
             width: 100%;
             max-width: 400px;
             color: var(--text);
-        }
-        .login-theme-switch {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            padding: 8px 12px;
-            border-radius: 999px;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow);
         }
         .login-logo {
             text-align: center;
@@ -80,17 +69,14 @@
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(0, 114, 178, 0.3);
         }
-        .login-error {
-            background: #fee2e2;
-            color: #991b1b;
-            padding: 12px;
+        .login-error {            padding: 12px;
             border-radius: 8px;
             margin-bottom: 20px;
             display: none;
             text-align: center;
         }
 
-        [data-theme="dark"] .login-error {
+        :root .login-error {
             background: var(--danger-soft);
             color: var(--danger-text);
             border: 1px solid var(--danger);
@@ -108,15 +94,6 @@
 </head>
 <body>
     <div class="login-container">
-        <div class="login-theme-switch">
-            <label class="theme-switch" title="Modo daltónico / oscuro">
-                <span class="theme-switch-icon" aria-hidden="true">☀️</span>
-                <input class="theme-switch-input" type="checkbox" onchange="alternarTema()" aria-label="Cambiar a modo oscuro">
-                <span class="theme-switch-slider" aria-hidden="true"></span>
-                <span class="theme-switch-icon" aria-hidden="true">🌙</span>
-                <span class="theme-switch-text">Daltónico</span>
-            </label>
-        </div>
         <div class="login-box">
             <div class="login-logo">
                 <h1>🍞</h1>
@@ -162,7 +139,6 @@
     <script src="js/core/ui.js"></script>
     <script src="js/features/conteos-tabs.js"></script>
     <script src="js/features/backup.js"></script>
-    <script src="js/features/exhibicion.js"></script>
     <script src="js/features/neveras.js"></script>
     <script>
         // Inicialización mínima: solo crea admin si no existe ningún usuario
@@ -188,7 +164,6 @@
             }
 
             asegurarPasswordAdminActualizado();
-            actualizarEstadoSwitchTema();
             
             // Limpiar campos por seguridad
             const codigoInput = document.getElementById('login-codigo');

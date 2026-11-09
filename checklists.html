@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklist de cambio de turno - K5753</title>
+    <link rel="stylesheet" href="css/estilos.css">
+    <link rel="stylesheet" href="css/components/checklists.css">
+</head>
+<body class="checklists-page">
+    <div class="container">
+        <header>
+            <div class="checklist-header"><h1>☑ Checklist de cambio de turno</h1><div id="user-info"></div></div>
+            <nav class="main-nav" id="main-nav" aria-label="Navegación principal"></nav>
+        </header>
+        <main>
+            <div class="checklist-intro">
+                <div><p class="eyebrow">OPERACIÓN DE TIENDA</p><h2>Checklist de cambio de turno</h2><p><strong>Sucursal:</strong> K5753 · <strong>Encargado:</strong> Edwin Mundy</p></div>
+            </div>
+            <div id="checklist-error" class="checklist-error" role="alert" hidden></div>
+            <div class="checklist-tabs" role="tablist" aria-label="Vistas de checklist">
+                <button type="button" id="tab-week" role="tab" aria-selected="true" aria-controls="panel-week" data-tab="week">Completar checklist</button>
+                <button type="button" id="tab-history" role="tab" aria-selected="false" aria-controls="panel-history" data-tab="history" tabindex="-1">Historial</button>
+                <button type="button" id="tab-actions" role="tab" aria-selected="false" aria-controls="panel-actions" data-tab="actions" tabindex="-1">Plan de acción</button>
+                <button type="button" id="tab-agenda" role="tab" aria-selected="false" aria-controls="panel-agenda" data-tab="agenda" tabindex="-1">Agenda de trabajo</button>
+                <button type="button" id="tab-manage" role="tab" aria-selected="false" aria-controls="panel-manage" data-tab="manage" tabindex="-1" hidden>Administrar</button>
+            </div>
+            <section id="panel-week" role="tabpanel" aria-labelledby="tab-week">
+                <form id="open-week-form" class="checklist-panel checklist-controls">
+                    <label>Checklist<select id="week-template" required></select></label>
+                    <label>Semana del<input id="week-date" type="date" required><small>Se usará el lunes de la semana elegida.</small></label>
+                    <label>Sucursal<input id="week-branch" maxlength="120" required placeholder="Nombre de la sucursal"></label>
+                    <label>Encargado<input id="week-leader" maxlength="120" required placeholder="Nombre del encargado"></label>
+                    <button type="submit" class="btn-primary" id="open-week">Aplicar semana y sucursal</button>
+                </form>
+                <div id="week-empty" class="checklist-panel checklist-empty"><span aria-hidden="true">☑</span><h3>Checklists de tienda</h3><p>Las actividades de la lista seleccionada aparecerán aquí. Si eliminaste las plantillas, los registros anteriores siguen disponibles en Historial.</p></div>
+                <div id="week-content" hidden>
+                    <section class="checklist-panel">
+                        <div class="checklist-section-heading"><div><h3 id="record-title"></h3><p id="record-meta"></p></div><span id="save-status" role="status" aria-live="polite">Guardado</span></div>
+                        <div class="checklist-stats" id="record-stats"></div>
+                        <div class="checklist-filters">
+                            <label>Buscar actividad<input id="task-search" type="search" placeholder="Ej. café, limpieza, inventario"></label>
+                            <label>Categoría<select id="task-category"><option value="">Todas las categorías</option></select></label>
+                            <label>Turno<select id="task-shift"><option value="">Todos los turnos</option></select></label>
+                            <button type="button" class="checklist-button" id="print-week">Imprimir / PDF</button>
+                        </div>
+                        <p class="checklist-help">Marca el turno cuando realices la tarea. Usa el globo junto a cada casilla para agregar un comentario; se ilumina cuando contiene una nota. Las casillas vacías no indican incumplimiento.</p>
+                        <p id="date-edit-policy" class="checklist-help" role="status"></p>
+                        <div class="checklist-table-scroll" tabindex="0" role="region" aria-label="Matriz semanal de actividades"><table class="checklist-matrix" id="checklist-matrix"></table></div>
+                    </section>
+                </div>
+            </section>
+            <section id="panel-actions" role="tabpanel" aria-labelledby="tab-actions" hidden>
+                <div id="action-empty" class="checklist-panel checklist-empty"><h3>Plan de acción</h3><p>Abre una semana desde Completar checklist o Historial para consultar y registrar sus tareas.</p></div>
+                <section id="action-content" class="checklist-panel" hidden>
+                    <div class="checklist-section-heading"><div><p class="eyebrow">SEGUIMIENTO</p><h3>Plan de acción</h3><p id="action-record-meta"></p></div><button type="button" class="checklist-button" id="new-action">＋ Agregar tarea</button></div>
+                    <p class="checklist-help">Admin, Corporativo, Cajero de Operaciones y Cajero de Procesos pueden agregar tareas. Solo Admin puede editarlas o eliminarlas.</p>
+                    <div id="action-list"></div>
+                </section>
+            </section>
+            <section id="panel-agenda" role="tabpanel" aria-labelledby="tab-agenda" hidden>
+                <section class="checklist-panel checklist-agenda"><div class="checklist-section-heading"><div><h3>Agenda de trabajo</h3><p>Horarios, responsabilidades por turno y recordatorios.</p></div></div><div id="shift-agenda"></div></section>
+            </section>
+            <section id="panel-history" role="tabpanel" aria-labelledby="tab-history" hidden>
+                <div class="checklist-panel"><div class="checklist-section-heading"><div><h3>Semanas registradas</h3><p>Las listas guardadas conservan sus actividades aunque después edites o elimines la plantilla.</p></div></div><label class="history-search">Buscar por sucursal, checklist o semana<input id="history-search" type="search" placeholder="Buscar registros"></label><div id="history-list"></div></div>
+            </section>
+            <section id="panel-manage" role="tabpanel" aria-labelledby="tab-manage" hidden>
+                <div class="checklist-panel"><div class="checklist-section-heading"><div><h3>Plantillas de checklist</h3><p>Las listas del Excel ya están cargadas. Puedes editar sus actividades o agregar listas adicionales. Los cambios se aplican a nuevos registros.</p></div><button type="button" class="btn-primary" id="new-checklist" hidden>＋ Nuevo checklist</button></div><div id="template-list"></div></div>
+            </section>
+        </main>
+    </div>
+    <dialog id="comment-dialog" class="checklist-dialog checklist-comment-dialog" aria-labelledby="comment-dialog-title" aria-describedby="comment-context">
+        <form id="comment-form">
+            <div class="checklist-section-heading"><h2 id="comment-dialog-title">Comentario del turno</h2><button type="button" class="checklist-button" data-close="comment-dialog" aria-label="Cerrar comentario">×</button></div>
+            <p id="comment-context" class="checklist-help"></p>
+            <p id="comment-permissions" class="checklist-help"></p>
+            <label>Comentario<textarea id="comment-text" maxlength="500" rows="4" placeholder="Escribe una nota breve…"></textarea></label>
+            <div class="comment-details"><small id="comment-author"></small><small id="comment-count">0 / 500</small></div>
+            <details id="comment-history" class="comment-history" hidden><summary id="comment-history-title">Historial de la nota</summary><ol id="comment-history-list"></ol></details>
+            <p id="comment-error" class="checklist-error" role="alert" hidden></p>
+            <div class="checklist-dialog-footer"><button type="button" class="checklist-button danger-button" id="delete-comment" hidden>Eliminar comentario</button><button type="button" class="checklist-button" data-close="comment-dialog">Cerrar</button><button type="submit" class="btn-primary" id="save-comment">Guardar comentario</button></div>
+        </form>
+    </dialog>
+    <dialog id="template-dialog" class="checklist-dialog checklist-editor" aria-labelledby="template-dialog-title">
+        <form id="template-form">
+            <div class="checklist-section-heading"><h2 id="template-dialog-title">Nuevo checklist</h2><button type="button" class="checklist-button" data-close="template-dialog" aria-label="Cerrar editor">×</button></div>
+            <div class="checklist-editor-fields"><label>Nombre<input id="template-name" maxlength="120" required></label><label>Turnos por día<select id="template-shifts"><option value="1">1 turno</option><option value="2">2 turnos</option><option value="3">3 turnos</option></select></label><label class="editor-description">Descripción<textarea id="template-description" maxlength="1000" rows="2"></textarea></label></div>
+            <div class="checklist-section-heading"><div><h3>Actividades</h3><p>Agrupa las tareas por categoría. Puedes cambiar su orden con las flechas.</p></div><button type="button" class="checklist-button" id="add-template-task">＋ Agregar actividad</button></div>
+            <div id="template-tasks"></div>
+            <p id="template-error" class="checklist-error" role="alert" hidden></p>
+            <div class="checklist-dialog-footer"><button type="button" class="checklist-button" data-close="template-dialog">Cancelar</button><button type="submit" class="btn-primary">Guardar checklist</button></div>
+        </form>
+    </dialog>
+    <dialog id="action-dialog" class="checklist-dialog" aria-labelledby="action-dialog-title">
+        <form id="action-form">
+            <div class="checklist-section-heading"><h2 id="action-dialog-title">Tarea del plan de acción</h2><button type="button" class="checklist-button" data-close="action-dialog" aria-label="Cerrar tarea">×</button></div>
+            <div class="checklist-action-fields">
+                <label class="full-width">Tarea asignada<textarea id="action-task" maxlength="1000" rows="2" required></textarea></label>
+                <label>Responsable<input id="action-responsible" maxlength="120" required></label>
+                <label>Estatus<select id="action-status"><option>Pendiente</option><option>En Proceso</option><option>Completado</option><option>Atrasado</option></select></label>
+                <label>Fecha asignada<input id="action-assigned" type="date" required></label>
+                <label>Fecha de vencimiento<input id="action-due" type="date" required></label>
+                <label class="full-width">Acotaciones<textarea id="action-notes" maxlength="2000" rows="3"></textarea></label>
+            </div>
+            <p id="action-error" class="checklist-error" role="alert" hidden></p>
+            <div class="checklist-dialog-footer"><button type="button" class="checklist-button" data-close="action-dialog">Cancelar</button><button type="submit" class="btn-primary">Guardar tarea</button></div>
+        </form>
+    </dialog>
+    <script src="js/core/config.js"></script>
+    <script src="js/core/utils.js"></script>
+    <script src="js/core/storage.js"></script>
+    <script src="js/core/init.js"></script>
+    <script src="js/features/categories.js"></script>
+    <script src="js/core/session-navigation.js"></script>
+    <script src="js/features/auditoria.js"></script>
+    <script src="js/core/ui.js"></script>
+    <script src="js/features/backup.js"></script>
+    <script src="js/features/checklists-data.js"></script>
+    <script src="js/features/checklists-store.js"></script>
+    <script src="js/features/checklists.js"></script>
+</body>
+</html>

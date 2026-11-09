@@ -40,18 +40,16 @@
 
         .category-option:hover {
             border-color: var(--primary);
-            background: #eff6ff;
             transform: translateY(-2px);
         }
 
         .category-option.selected {
             border-color: var(--primary);
-            background: #eff6ff;
             box-shadow: var(--shadow);
         }
 
-        [data-theme="dark"] .category-option:hover,
-        [data-theme="dark"] .category-option.selected {
+        :root .category-option:hover,
+        :root .category-option.selected {
             background: var(--primary-soft);
         }
 
@@ -62,11 +60,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: white;
             border-radius: 10px;
         }
 
-        [data-theme="dark"] .category-option .icon {
+        :root .category-option .icon {
             background: var(--muted-control-bg);
         }
 
@@ -175,10 +172,9 @@
 
         .file-drop-zone.dragover {
             border-color: var(--success);
-            background: #ecfdf5;
         }
 
-        [data-theme="dark"] .file-drop-zone.dragover {
+        :root .file-drop-zone.dragover {
             background: var(--success-soft);
         }
 
@@ -262,10 +258,9 @@
         .stock-input:focus {
             outline: none;
             border-color: var(--primary);
-            background: #eff6ff;
         }
 
-        [data-theme="dark"] .stock-input:focus {
+        :root .stock-input:focus {
             background: var(--primary-soft);
         }
 
@@ -295,42 +290,30 @@
             display: inline-block;
         }
 
-        .estado-ok {
-            background: #d1fae5;
-            color: #065f46;
-        }
 
-        .estado-ingresar {
-            background: #dbeafe;
-            color: #1e40af;
-        }
 
-        .estado-egresar {
-            background: #fee2e2;
-            color: #991b1b;
-        }
 
-        .estado-pendiente {
-            background: #fef3c7;
-            color: #92400e;
-        }
 
-        [data-theme="dark"] .estado-ok {
+
+
+
+
+        :root .estado-ok {
             background: var(--success-soft);
             color: var(--success-text);
         }
 
-        [data-theme="dark"] .estado-ingresar {
+        :root .estado-ingresar {
             background: var(--primary-soft);
             color: var(--primary);
         }
 
-        [data-theme="dark"] .estado-egresar {
+        :root .estado-egresar {
             background: var(--danger-soft);
             color: var(--danger-text);
         }
 
-        [data-theme="dark"] .estado-pendiente {
+        :root .estado-pendiente {
             background: var(--warning-soft);
             color: var(--warning-text);
         }
@@ -408,26 +391,24 @@
             margin-bottom: 16px;
         }
 
-        .match-info {
-            background: #f0fdf4;
-            border-left: 4px solid #22c55e;
+        .match-info {            border-left: 4px solid #22c55e;
             padding: 16px;
             border-radius: 8px;
             margin-bottom: 16px;
             display: none;
         }
 
-        [data-theme="dark"] .match-info {
+        :root .match-info {
             background: var(--success-panel);
             border-left-color: var(--success);
             color: var(--text);
         }
 
-        [data-theme="dark"] .conteo-table [style*="color: #8b5cf6"] {
+        :root .conteo-table [style*="color: #8b5cf6"] {
             color: #c4b5fd !important;
         }
 
-        [data-theme="dark"] .conteo-table [style*="color: #06b6d4"] {
+        :root .conteo-table [style*="color: #06b6d4"] {
             color: #67e8f9 !important;
         }
 
@@ -695,7 +676,6 @@
     <script src="js/core/ui.js"></script>
     <script src="js/features/conteos-tabs.js"></script>
     <script src="js/features/backup.js"></script>
-    <script src="js/features/exhibicion.js"></script>
     <script src="js/features/neveras.js"></script>
     <script>
         // Variables del conteo

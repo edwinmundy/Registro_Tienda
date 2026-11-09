@@ -79,12 +79,10 @@
             background: var(--bg);
         }
         
-        .nevera-item.selected {
-            background: #eff6ff;
-            border-left: 4px solid var(--primary);
+        .nevera-item.selected {            border-left: 4px solid var(--primary);
         }
 
-        [data-theme="dark"] .nevera-item.selected {
+        :root .nevera-item.selected {
             background: var(--primary-soft);
         }
         
@@ -198,21 +196,21 @@
             font-weight: 600;
         }
         
-        .badge-normal { background: #d1fae5; color: #065f46; }
-        .badge-alerta { background: #fef3c7; color: #92400e; }
-        .badge-critico { background: #fee2e2; color: #991b1b; }
+        .badge-normal {color: #065f46; }
+        .badge-alerta {color: #92400e; }
+        .badge-critico {color: #991b1b; }
 
-        [data-theme="dark"] .badge-normal {
+        :root .badge-normal {
             background: var(--success-soft);
             color: var(--success-text);
         }
 
-        [data-theme="dark"] .badge-alerta {
+        :root .badge-alerta {
             background: var(--warning-soft);
             color: var(--warning-text);
         }
 
-        [data-theme="dark"] .badge-critico {
+        :root .badge-critico {
             background: var(--danger-soft);
             color: var(--danger-text);
         }
@@ -254,17 +252,14 @@
             margin-bottom: 12px;
         }
         
-        .admin-badge-nevera {
-            background: #fef3c7;
-            color: #d97706;
-            padding: 4px 8px;
+        .admin-badge-nevera {            padding: 4px 8px;
             border-radius: 12px;
             font-size: 0.7rem;
             font-weight: 600;
             margin-left: 8px;
         }
 
-        [data-theme="dark"] .admin-badge-nevera {
+        :root .admin-badge-nevera {
             background: var(--warning-soft);
             color: var(--warning-text);
         }
@@ -394,7 +389,6 @@
     <script src="js/core/ui.js"></script>
     <script src="js/features/conteos-tabs.js"></script>
     <script src="js/features/backup.js"></script>
-    <script src="js/features/exhibicion.js"></script>
     <script src="js/features/neveras.js"></script>
     <script>
         let neveraSeleccionada = null;

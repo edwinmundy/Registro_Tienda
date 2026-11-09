@@ -2,52 +2,6 @@
 // SISTEMA DE SESIONES
 // ==========================================
 
-const THEME_STORAGE_KEY = 'inventario_tema';
-
-function obtenerTemaActual() {
-    return localStorage.getItem(THEME_STORAGE_KEY) || 'light';
-}
-
-function aplicarTema(tema) {
-    const temaNormalizado = tema === 'dark' ? 'dark' : 'light';
-    document.documentElement.dataset.theme = temaNormalizado;
-    localStorage.setItem(THEME_STORAGE_KEY, temaNormalizado);
-}
-
-function alternarTema() {
-    const nuevoTema = obtenerTemaActual() === 'dark' ? 'light' : 'dark';
-    aplicarTema(nuevoTema);
-    actualizarEstadoSwitchTema();
-}
-
-function actualizarEstadoSwitchTema() {
-    const temaOscuro = obtenerTemaActual() === 'dark';
-
-    document.querySelectorAll('.theme-switch-input').forEach(input => {
-        input.checked = temaOscuro;
-        input.setAttribute('aria-label', temaOscuro ? 'Cambiar a modo para daltónicos' : 'Cambiar a modo oscuro');
-    });
-
-    document.querySelectorAll('.theme-switch-text').forEach(texto => {
-        texto.textContent = temaOscuro ? 'Oscuro' : 'Daltónico';
-    });
-}
-
-function crearSwitchTemaHtml() {
-    const temaOscuro = obtenerTemaActual() === 'dark';
-    return `
-        <label class="theme-switch" title="Modo daltónico / oscuro">
-            <span class="theme-switch-icon" aria-hidden="true">☀️</span>
-            <input class="theme-switch-input" type="checkbox" onchange="alternarTema()" ${temaOscuro ? 'checked' : ''} aria-label="${temaOscuro ? 'Cambiar a modo para daltónicos' : 'Cambiar a modo oscuro'}">
-            <span class="theme-switch-slider" aria-hidden="true"></span>
-            <span class="theme-switch-icon" aria-hidden="true">🌙</span>
-            <span class="theme-switch-text">${temaOscuro ? 'Oscuro' : 'Daltónico'}</span>
-        </label>
-    `;
-}
-
-aplicarTema(obtenerTemaActual());
-
 function obtenerSesionActiva() {
     const sesion = localStorage.getItem(STORAGE_KEYS.sesion);
     if (sesion) {
@@ -130,11 +84,9 @@ function mostrarUsuarioActual() {
             userDiv.innerHTML = `
                 <div class="user-session">
                     <span>👤 <strong>${sesion.cajeroNombre}</strong> (${sesion.cajeroCodigo})</span>
-                    ${crearSwitchTemaHtml()}
                     <button class="logout-btn" onclick="cerrarSesion()">Cerrar Sesión</button>
                 </div>
             `;
-            actualizarEstadoSwitchTema();
         }
     }
 }
@@ -153,28 +105,32 @@ function actualizarNavegacion() {
     const esConteoCategoria = paginaActual === 'conteo_categoria.html';
     const esConteoCafe = paginaActual === 'conteo_cafe.html';
     const esAdmin = esAdminActual();
+    const botonesRespaldo = esAdmin ? `
+                <button type="button" class="nav-btn" onclick="exportarLocalStorageCompleto()">📤 Descargar respaldo</button>
+                <button type="button" class="nav-btn" onclick="document.getElementById('nav-backup-file-input').click()">📥 Cargar respaldo</button>
+                <input type="file" id="nav-backup-file-input" accept=".json,application/json" hidden onchange="importarLocalStorageCompleto(event)">
+    ` : '';
     const linksAdmin = esAdmin ? `
                 <a href="auditoria.html" class="nav-btn ${paginaActual === 'auditoria.html' ? 'active' : ''}">📋 Auditoría</a>
                 <a href="inventario.html" class="nav-btn ${paginaActual === 'inventario.html' ? 'active' : ''}">📊 Reportes</a>
-                <a href="respaldo.html" class="nav-btn ${paginaActual === 'respaldo.html' ? 'active' : ''}">💾 Respaldo</a>
+
     ` : '';
     const configCategoriasAdmin = esAdmin
-        ? `<a href="categorias.html" class="nav-btn ${paginaActual === 'categorias.html' ? 'active' : ''}">⚙️ Config. cat.</a>
-                <a href="vida_util.html" class="nav-btn ${paginaActual === 'vida_util.html' ? 'active' : ''}">⏱️ Vida útil</a>`
+        ? `<a href="categorias.html" class="nav-btn ${paginaActual === 'categorias.html' ? 'active' : ''}">⚙️ Config. cat.</a>`
         : '';
     
     let html = `
         <div class="nav-wrapper">
             <div class="main-nav">
                 <a href="index.html" class="nav-btn ${paginaActual === 'index.html' ? 'active' : ''}">🏠 Inicio</a>
+                ${botonesRespaldo}
                 <a href="conteo_cigarrillos.html" class="nav-btn ${paginaActual === 'conteo_cigarrillos.html' ? 'active' : ''}">🚬 Cigarrillos</a>
                 <a href="historial_conteos.html" class="nav-btn ${paginaActual === 'historial_conteos.html' ? 'active' : ''}">📜 Hist. Cigarrillos</a>
                 <a href="conteo_categoria.html" class="nav-btn ${esConteoCategoria ? 'active' : ''}">📊 Conteo Cat.</a>
                 <a href="conteo_cafe.html" class="nav-btn ${esConteoCafe ? 'active' : ''}">☕ Café</a>
                 <a href="cajeros.html" class="nav-btn ${paginaActual === 'cajeros.html' ? 'active' : ''}">👤 Cajeros</a>
-                <a href="rotacion.html" class="nav-btn ${paginaActual === 'rotacion.html' ? 'active' : ''}">🧁 Rotación</a>
                 <a href="neveras.html" class="nav-btn ${paginaActual === 'neveras.html' ? 'active' : ''}">🌡️ Neveras</a>
-                <a href="saladette.html" class="nav-btn ${paginaActual === 'saladette.html' ? 'active' : ''}">🥗 Saladette</a>
+                <a href="checklists.html" class="nav-btn ${paginaActual === 'checklists.html' ? 'active' : ''}">☑ Checklists</a>
                 <a href="cierre_de_caja.html" class="nav-btn ${paginaActual === 'cierre_de_caja.html' ? 'active' : ''}">💵 Cierre caja</a>
 
                 <div class="categories-dropdown-container ${esPaginaCategoria ? 'active' : ''}" id="categories-dropdown">

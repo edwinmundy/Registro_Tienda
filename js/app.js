@@ -23,7 +23,6 @@
         'core/ui.js',
         'features/conteos-tabs.js',
         'features/backup.js',
-        'features/exhibicion.js',
         'features/neveras.js'
     ];
 

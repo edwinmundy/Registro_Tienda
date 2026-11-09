@@ -536,44 +536,44 @@
 .capture-estado-egresar { color: #b91c1c; }
 .capture-estado-pendiente { color: #92400e; }
 
-[data-theme="dark"] .detalle-table tr[style],
-[data-theme="dark"] .detalle-table td[style] {
+:root .detalle-table tr[style],
+:root .detalle-table td[style] {
     background: var(--card-bg) !important;
 }
 
-[data-theme="dark"] .detalle-table th[style] {
+:root .detalle-table th[style] {
     background: var(--bg) !important;
     color: var(--text-light) !important;
 }
 
-[data-theme="dark"] .detalle-table code[style] {
+:root .detalle-table code[style] {
     background: var(--bg) !important;
     border-color: var(--border) !important;
     color: var(--text) !important;
 }
 
-[data-theme="dark"] .detalle-table .col-bodega,
-[data-theme="dark"] #detalle-conteo [style*="color: #8b5cf6"] {
+:root .detalle-table .col-bodega,
+:root #detalle-conteo [style*="color: #8b5cf6"] {
     color: #c4b5fd !important;
 }
 
-[data-theme="dark"] .detalle-table .col-exhibicion,
-[data-theme="dark"] #detalle-conteo [style*="color: #0891b2"] {
+:root .detalle-table .col-exhibicion,
+:root #detalle-conteo [style*="color: #0891b2"] {
     color: #67e8f9 !important;
 }
 
-[data-theme="dark"] .detalle-table .col-total,
-[data-theme="dark"] #detalle-conteo [style*="color: #2563eb"] {
+:root .detalle-table .col-total,
+:root #detalle-conteo [style*="color: #2563eb"] {
     color: #93c5fd !important;
 }
 
-[data-theme="dark"] #detalle-conteo > div[style] {
+:root #detalle-conteo > div[style] {
     background: var(--bg) !important;
     border: 1px solid var(--border);
 }
 
-[data-theme="dark"] #detalle-conteo div[style*="color: #1e293b"],
-[data-theme="dark"] #detalle-conteo div[style*="color: #64748b"] {
+:root #detalle-conteo div[style*="color: #1e293b"],
+:root #detalle-conteo div[style*="color: #64748b"] {
     color: var(--text) !important;
 }
 
@@ -665,7 +665,6 @@
     <script src="js/core/ui.js"></script>
     <script src="js/features/conteos-tabs.js"></script>
     <script src="js/features/backup.js"></script>
-    <script src="js/features/exhibicion.js"></script>
     <script src="js/features/neveras.js"></script>
     <script>
         let conteoActualParaCaptura = null;

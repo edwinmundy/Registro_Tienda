@@ -75,27 +75,20 @@ async function exportarLocalStorageCompleto() {
     }
 }
 
-const CLAVES_RESPALDO_EXCLUIDAS = new Set([
-    'inventario_sesion',
-    'inventario_tema'
-]);
-
 const CLAVES_RESPALDO_EXPLICITAS = [
+    'inventario_categorias',
+    'inventario_cajeros',
+    'inventario_auditoria',
+    'inventario_neveras',
+    'inventario_registros_temp',
+    'inventario_registro_cafe',
+    'inventario_checklists',
+    'inventario_conteo_en_progreso',
+    'inventario_cigarrillos_sistema',
+    'inventario_historial_conteos',
     'conteo_en_progreso',
     'cigarrillos_sistema',
-    'exhibicion_activa',
-    'historial_conteos',
-    'inventario_saladette',
-    'inventario_vida_util_productos',
-    'rotacion_panaderia_data_v5',
-    'rotacion_panaderia_historial_v5',
-    'rotacion_panaderia_leyenda_v1'
-];
-
-const PREFIJOS_RESPALDO = [
-    'config_duracion_',
-    'inventario_',
-    'rotacion_'
+    'historial_conteos'
 ];
 
 function obtenerUsuarioActualCompleto() {
@@ -139,10 +132,10 @@ async function confirmarPasswordUsuarioActual(nombreAccion) {
     return true;
 }
 
-function claveEsRespaldable(key) {
-    if (!key || CLAVES_RESPALDO_EXCLUIDAS.has(key)) return false;
+function claveEsRespaldable(key, categorias = obtenerCategorias()) {
+    if (!key || key === STORAGE_KEYS.sesion) return false;
     if (CLAVES_RESPALDO_EXPLICITAS.includes(key)) return true;
-    return PREFIJOS_RESPALDO.some(prefijo => key.startsWith(prefijo));
+    return Array.isArray(categorias) && categorias.some(cat => key === `inventario_${cat.id}`);
 }
 
 function obtenerClavesRespaldoSistema() {
@@ -184,18 +177,12 @@ function obtenerResumenRespaldoSistema() {
     const cajeros = obtenerDatos('cajeros');
     const auditoria = obtenerDatos('auditoria');
     const totalProductos = categorias.reduce((total, cat) => total + obtenerDatos(cat.id).length, 0);
-    const saladette = obtenerArrayStorage('inventario_saladette');
-    const vidaUtil = obtenerArrayStorage('inventario_vida_util_productos');
-    const rotacion = obtenerArrayStorage('rotacion_panaderia_data_v5');
 
     return {
         categorias: categorias.length,
         productos: totalProductos,
         cajeros: cajeros.length,
         auditoria: auditoria.length,
-        saladette: saladette.length,
-        vidaUtil: vidaUtil.length,
-        rotacion: rotacion.length,
         claves: Object.keys(datos).length
     };
 }
@@ -217,7 +204,7 @@ async function limpiarLocalStorageCompleto() {
     
     // Primera confirmación
     const confirmaLimpieza = await confirmarAccion(
-        '¿ESTÁS SEGURO?\n\nEsto eliminará TODOS los datos del sistema:\n✓ Categorías\n✓ Productos\n✓ Cajeros (excepto admin)\n✓ Auditoría\n✓ Conteos de cigarrillos\n✓ Historial\n✓ Rotación de productos\n\nEsta acción NO se puede deshacer.\n\n¿Deseas continuar?',
+        '¿ESTÁS SEGURO?\n\nEsto eliminará TODOS los datos del sistema:\n✓ Categorías\n✓ Productos\n✓ Cajeros (excepto admin)\n✓ Auditoría\n✓ Conteos de cigarrillos\n✓ Historial\n\nEsta acción NO se puede deshacer.\n\n¿Deseas continuar?',
         {
             titulo: 'Eliminar todo el sistema',
             tipo: 'warning',
@@ -272,15 +259,10 @@ async function limpiarLocalStorageCompleto() {
             'inventario_auditoria',
             'inventario_neveras',
             'inventario_registros_temp',
-            'inventario_saladette',
-            'inventario_vida_util_productos',
+            'inventario_checklists',
             'conteo_en_progreso',
             'cigarrillos_sistema',
-            'exhibicion_activa',
             'historial_conteos',
-            'rotacion_panaderia_data_v5',
-            'rotacion_panaderia_historial_v5',
-            'rotacion_panaderia_leyenda_v1'
         );
         
         // Eliminar todas las claves
@@ -366,9 +348,10 @@ async function importarLocalStorageCompleto(event) {
             // Limpiar datos del sistema primero, sin destruir preferencias ajenas.
             obtenerClavesRespaldoSistema().forEach(key => localStorage.removeItem(key));
             
-            // Restaurar datos
+            // Restaurar los datos de los módulos y categorías incluidos en el respaldo.
+            const categoriasRespaldo = backup.datos[STORAGE_KEYS.categorias] || [];
             Object.keys(backup.datos).forEach(key => {
-                if (!claveEsRespaldable(key)) return;
+                if (!claveEsRespaldable(key, categoriasRespaldo)) return;
 
                 const valor = backup.datos[key];
                 if (typeof valor === 'object') {

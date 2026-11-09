@@ -261,7 +261,6 @@
 
         .movement-bar.entrada { background: var(--success); }
         .movement-bar.salida { background: var(--primary); }
-        .movement-bar.vencimiento { background: var(--danger); }
 
         .movement-label {
             margin-top: 4px;
@@ -293,7 +292,6 @@
 
         .movement-legend .entrada::before { background: var(--success); }
         .movement-legend .salida::before { background: var(--primary); }
-        .movement-legend .vencimiento::before { background: var(--danger); }
 
         .movement-empty {
             margin-top: 10px;
@@ -607,6 +605,14 @@
                         </div>
 
                         <div class="admin-list">
+                            <a href="checklists.html" class="admin-card">
+                                <div class="admin-icon">☑</div>
+                                <div class="admin-info">
+                                    <div class="admin-name">Checklists</div>
+                                    <div class="admin-desc">Actividades por turno y plan de acción</div>
+                                </div>
+                                <span class="admin-arrow">→</span>
+                            </a>
                             <a href="cajeros.html" class="admin-card">
                                 <div class="admin-icon">👤</div>
                                 <div class="admin-info">
@@ -634,29 +640,11 @@
                                 <span class="admin-arrow">→</span>
                             </a>
 
-                            <a href="respaldo.html" class="admin-card admin-only">
-                                <div class="admin-icon">💾</div>
-                                <div class="admin-info">
-                                    <div class="admin-name">Respaldo</div>
-                                    <div class="admin-desc">Guardar o cargar toda la información</div>
-                                </div>
-                                <span class="admin-arrow">→</span>
-                            </a>
-
                             <a href="categorias.html" class="admin-card admin-only">
                                 <div class="admin-icon">🏷️</div>
                                 <div class="admin-info">
                                     <div class="admin-name">Categorías</div>
                                     <div class="admin-desc">Crear o eliminar categorías</div>
-                                </div>
-                                <span class="admin-arrow">→</span>
-                            </a>
-
-                            <a href="rotacion.html" class="admin-card">
-                                <div class="admin-icon">🧁</div>
-                                <div class="admin-info">
-                                    <div class="admin-name">Rotación</div>
-                                    <div class="admin-desc">Exhibición FIFO y vencimientos</div>
                                 </div>
                                 <span class="admin-arrow">→</span>
                             </a>
@@ -681,7 +669,6 @@
     <script src="js/core/ui.js"></script>
     <script src="js/features/conteos-tabs.js"></script>
     <script src="js/features/backup.js"></script>
-    <script src="js/features/exhibicion.js"></script>
     <script src="js/features/neveras.js"></script>
 
     <script>
@@ -722,8 +709,7 @@
             return dias.map(dia => ({
                 ...dia,
                 entrada: 0,
-                salida: 0,
-                vencimiento: 0
+                salida: 0
             }));
         }
 
@@ -733,27 +719,10 @@
             dia[tipo] += Math.max(0, Number(cantidad) || 0);
         }
 
-        function obtenerMapaProductosCategoria(categorias) {
-            const mapaPorId = new Map();
-            const mapaPorNombre = new Map();
-
-            categorias.forEach(cat => {
-                obtenerDatos(cat.id).forEach(item => {
-                    if (item.id) mapaPorId.set(String(item.id), cat.id);
-                    if (item.nombre) mapaPorNombre.set(String(item.nombre).toLowerCase(), cat.id);
-                });
-            });
-
-            return { mapaPorId, mapaPorNombre };
-        }
-
-        function obtenerMovimientosCategoria(cat, items, dias, mapasProductos) {
+        function obtenerMovimientosCategoria(cat, dias) {
             const serie = crearSerieVaciaMovimientos(dias);
             const keysValidas = new Set(dias.map(dia => dia.key));
             const auditoria = obtenerDatos('auditoria') || [];
-            const rotacionHistorial = obtenerArrayStorage('rotacion_panaderia_historial_v5');
-            const idsCategoria = new Set(items.map(item => String(item.id)));
-            const nombresCategoria = new Set(items.map(item => String(item.nombre || '').toLowerCase()));
 
             auditoria.forEach(reg => {
                 const key = obtenerKeyDiaMovimiento(reg.fecha);
@@ -766,28 +735,8 @@
                     sumarMovimientoDia(serie, key, 'entrada', cantidad);
                 }
 
-                if (['salida', 'eliminacion', 'saladette_agregado', 'exhibicion_agregado'].includes(reg.tipo)) {
+                if (['salida', 'eliminacion'].includes(reg.tipo)) {
                     sumarMovimientoDia(serie, key, 'salida', cantidad);
-                }
-            });
-
-            rotacionHistorial.forEach(mov => {
-                const key = obtenerKeyDiaMovimiento(mov.fecha);
-                if (!keysValidas.has(key)) return;
-
-                const productoCodigo = String(mov.productoCodigo || '');
-                const productoTipo = String(mov.productoTipo || '').toLowerCase();
-                const pertenecePorCodigo = idsCategoria.has(productoCodigo) || mapasProductos.mapaPorId.get(productoCodigo) === cat.id;
-                const pertenecePorNombre = nombresCategoria.has(productoTipo) || mapasProductos.mapaPorNombre.get(productoTipo) === cat.id;
-
-                if (!pertenecePorCodigo && !pertenecePorNombre) return;
-
-                if (mov.tipo === 'agregado') {
-                    sumarMovimientoDia(serie, key, 'salida', 1);
-                }
-
-                if (mov.tipo === 'vencimiento') {
-                    sumarMovimientoDia(serie, key, 'vencimiento', 1);
                 }
             });
 
@@ -795,8 +744,8 @@
         }
 
         function generarGraficoMovimientosCategoria(serie) {
-            const maximo = Math.max(1, ...serie.flatMap(dia => [dia.entrada, dia.salida, dia.vencimiento]));
-            const total = serie.reduce((acc, dia) => acc + dia.entrada + dia.salida + dia.vencimiento, 0);
+            const maximo = Math.max(1, ...serie.flatMap(dia => [dia.entrada, dia.salida]));
+            const total = serie.reduce((acc, dia) => acc + dia.entrada + dia.salida, 0);
 
             if (total === 0) {
                 return '<div class="movement-empty">Sin movimientos registrados en los últimos 8 días.</div>';
@@ -805,14 +754,12 @@
             const barras = serie.map(dia => {
                 const alturaEntrada = Math.max(3, Math.round((dia.entrada / maximo) * 44));
                 const alturaSalida = Math.max(3, Math.round((dia.salida / maximo) * 44));
-                const alturaVencimiento = Math.max(3, Math.round((dia.vencimiento / maximo) * 44));
 
                 return `
-                    <div class="movement-day" title="${dia.label} | Entrada: ${dia.entrada} | Salida: ${dia.salida} | Vencimiento: ${dia.vencimiento}">
+                    <div class="movement-day" title="${dia.label} | Entrada: ${dia.entrada} | Salida: ${dia.salida}">
                         <div class="movement-bars">
                             <span class="movement-bar entrada" style="height:${alturaEntrada}px"></span>
                             <span class="movement-bar salida" style="height:${alturaSalida}px"></span>
-                            <span class="movement-bar vencimiento" style="height:${alturaVencimiento}px"></span>
                         </div>
                         <div class="movement-label">${dia.label}</div>
                     </div>
@@ -825,7 +772,6 @@
                     <div class="movement-legend">
                         <span class="entrada">Entrada</span>
                         <span class="salida">Salida</span>
-                        <span class="vencimiento">Venc.</span>
                     </div>
                 </div>
             `;
@@ -838,7 +784,6 @@
 
             const categorias = obtenerCategorias();
             const diasMovimiento = obtenerDiasMovimientoDashboard(8);
-            const mapasProductos = obtenerMapaProductosCategoria(categorias);
 
             let totalItems = 0;
             let totalAlertas = 0;
@@ -848,7 +793,7 @@
                 const count = items.length;
                 const alertas = items.filter(i => i.cantidad <= i.minimo).length;
                 const criticos = items.filter(i => i.cantidad <= i.minimo * 0.5).length;
-                const movimientos = obtenerMovimientosCategoria(cat, items, diasMovimiento, mapasProductos);
+                const movimientos = obtenerMovimientosCategoria(cat, diasMovimiento);
 
                 totalItems += count;
                 totalAlertas += alertas;

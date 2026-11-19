@@ -1,0 +1,85 @@
+.coffee-machines {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.coffee-machine {
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg);
+}
+
+.coffee-machine-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.coffee-machine label,
+.machine-dialog label {
+    display: block;
+    margin: 10px 0 6px;
+    font-weight: 600;
+}
+
+.coffee-machine input,
+.machine-dialog input,
+.machine-dialog select,
+.machine-incidents input[type="datetime-local"],
+.machine-incidents select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font: inherit;
+}
+
+.machine-add {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--primary);
+    border-radius: 10px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-size: 1.7rem;
+    cursor: pointer;
+}
+
+.machine-add:hover { background: var(--muted-control-bg); }
+.machine-help { color: var(--text-light); font-size: .9rem; }
+#machine-status { margin-top: 12px; min-height: 1.5em; }
+.machine-error { color: var(--danger-text); margin: 12px 0; }
+.machine-incidents td { vertical-align: top; }
+.machine-incidents td:nth-child(4) { min-width: 180px; overflow-wrap: anywhere; }
+.machine-incidents td:nth-child(5) { min-width: 110px; }
+.machine-incidents small { display: block; overflow-wrap: anywhere; }
+.machine-repair-form { display: grid; gap: 8px; min-width: 235px; }
+.machine-repair-form label { display: flex; gap: 8px; align-items: center; }
+.machine-repair-form button { justify-content: center; padding: 9px 12px; }
+.machine-repair-form input:disabled { opacity: .5; }
+
+.machine-dialog {
+    width: min(480px, calc(100% - 32px));
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    margin: auto;
+    padding: 24px;
+    background: var(--card-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+}
+
+.machine-dialog::backdrop { background: rgba(0, 0, 0, .65); }
+.machine-dialog .toolbar-actions { margin-top: 18px; }
+
+@media (max-width: 720px) {
+    .coffee-machines { grid-template-columns: 1fr; }
+}

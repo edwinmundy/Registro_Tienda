@@ -82,6 +82,7 @@ const CLAVES_RESPALDO_EXPLICITAS = [
     'inventario_neveras',
     'inventario_registros_temp',
     'inventario_registro_cafe',
+    'inventario_maquinas_cafe',
     'inventario_checklists',
     'inventario_conteo_en_progreso',
     'inventario_cigarrillos_sistema',

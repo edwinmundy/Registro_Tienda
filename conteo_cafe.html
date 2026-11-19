@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Conteo de Café - Inventario</title>
     <link rel="stylesheet" href="css/estilos.css">
+    <link rel="stylesheet" href="css/components/coffee-machines.css">
     <style>
         .coffee-panel {
             background: var(--card-bg);
@@ -222,6 +223,36 @@
         </header>
 
         <main>
+            <section class="coffee-panel" aria-labelledby="machines-title">
+                <div class="coffee-toolbar">
+                    <h2 id="machines-title">Máquinas de café</h2>
+                </div>
+                <p class="machine-help">Edita el número de serie; se guarda automáticamente. Usa + para agregar una incidencia.</p>
+                <div id="coffee-machines" class="coffee-machines"></div>
+                <p id="machine-status" class="machine-help" role="status" aria-live="polite"></p>
+            </section>
+
+            <section class="coffee-panel" aria-labelledby="incidents-title">
+                <div class="coffee-toolbar">
+                    <h2 id="incidents-title">Registro de incidencias</h2>
+                </div>
+                <div class="table-wrap">
+                    <table class="registro-table machine-incidents">
+                        <thead>
+                            <tr>
+                                <th scope="col">Cajero</th>
+                                <th scope="col">Fecha y hora</th>
+                                <th scope="col">Máquina</th>
+                                <th scope="col">Incidencia</th>
+                                <th scope="col">¿Reportada?</th>
+                                <th scope="col">Reparación</th>
+                            </tr>
+                        </thead>
+                        <tbody id="machine-incidents-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
             <section class="coffee-panel">
                 <div class="coffee-toolbar">
                     <h2>Tipos de café por onzas</h2>
@@ -237,9 +268,9 @@
                             <tr>
                                 <th>Onzas</th>
                                 <th>Tipo de café</th>
-                                <th>#1</th>
-                                <th>#2</th>
-                                <th>#3</th>
+                                <th>Máquina 1</th>
+                                <th>Máquina 2</th>
+                                <th>Máquina 3</th>
                                 <th>Registro</th>
                             </tr>
                         </thead>
@@ -263,9 +294,9 @@
                                 <th>Fecha</th>
                                 <th>Onzas</th>
                                 <th>Tipo de café</th>
-                                <th>#1</th>
-                                <th>#2</th>
-                                <th>#3</th>
+                                <th>Máquina 1</th>
+                                <th>Máquina 2</th>
+                                <th>Máquina 3</th>
                             </tr>
                         </thead>
                         <tbody id="registro-table-body"></tbody>
@@ -274,6 +305,27 @@
             </section>
         </main>
     </div>
+
+    <dialog id="machine-incident-dialog" class="machine-dialog" aria-labelledby="machine-incident-title">
+        <form id="machine-incident-form">
+            <h2 id="machine-incident-title">Nueva incidencia</h2>
+            <p id="machine-incident-serial" class="machine-help"></p>
+            <label for="machine-incident-problem">Problema</label>
+            <input id="machine-incident-problem" name="problema" type="text" maxlength="80" required
+                placeholder="Ej.: No calienta el agua" aria-describedby="machine-incident-limit" autocomplete="off">
+            <p id="machine-incident-limit" class="machine-help">Máximo 6 palabras y 80 caracteres.</p>
+            <label for="machine-incident-reported">¿Ya se reportó?</label>
+            <select id="machine-incident-reported" name="reportada">
+                <option value="no">No</option>
+                <option value="si">Sí</option>
+            </select>
+            <p id="machine-incident-error" class="machine-error" role="alert"></p>
+            <div class="toolbar-actions">
+                <button type="submit" class="btn-primary">Guardar incidencia</button>
+                <button type="button" class="btn-secondary" id="machine-incident-cancel">Cancelar</button>
+            </div>
+        </form>
+    </dialog>
 
     <script src="js/core/config.js"></script>
     <script src="js/core/utils.js"></script>
@@ -284,6 +336,7 @@
     <script src="js/features/auditoria.js"></script>
     <script src="js/features/backup.js"></script>
     <script src="js/core/init.js"></script>
+    <script src="js/features/coffee-machines.js"></script>
     <script>
         const STORAGE_REGISTRO_CAFE = 'inventario_registro_cafe';
         const COLUMNAS_CAFE = ['1', '2', '3'];
